@@ -1,10 +1,7 @@
 import flet as ft
 from .screen import Screen
 
-# Interface for screens (ISP, DIP)
 
-
-# Concrete screen implementations (SRP, LSP)
 class HomeScreen(Screen):
     def __init__(self, navigator):
         self.navigator = navigator
@@ -31,7 +28,7 @@ class HomeScreen(Screen):
                 )
             ]
             * 100,
-            width=self.navigator.page.width - 535,
+            width = self.navigator.page.width - 355,
             scroll=ft.ScrollMode.ADAPTIVE,
         ),minimum_padding=20)
         return ft.Container(
@@ -48,7 +45,7 @@ class HomeScreen(Screen):
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        width=500,
+                        width=300,
                     ),
                     ft.VerticalDivider(width=5, color=ft.Colors.PRIMARY),
                     self.packs_column,
@@ -58,5 +55,5 @@ class HomeScreen(Screen):
         )
 
     def resize(self, e):
-        self.packs_column.width = self.navigator.page.width - 535
+        self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()

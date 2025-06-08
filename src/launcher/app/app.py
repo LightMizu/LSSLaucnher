@@ -8,6 +8,7 @@ class Laucher:
         self.page = page
         self.page.title = "LSSLaucnher"
         self.page.theme_mode = ft.ThemeMode.DARK
+        self.page.window.width = 1000
         self.page.theme = ft.Theme(color_scheme_seed=ft.Colors.PURPLE_300)
         self.page.dark_theme = ft.Theme(color_scheme_seed=ft.Colors.PURPLE_300)
         self.screen_manager = ScreenManager(page)
