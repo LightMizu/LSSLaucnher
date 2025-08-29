@@ -6,5 +6,5 @@ def main(page: ft.Page):
     app = Laucher(page)
     app.run()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     ft.app(target=main)
