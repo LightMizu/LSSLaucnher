@@ -7,7 +7,7 @@ class AuthUtil:
     
     def check_token_is_valid(self):
         status_code, resp = self.api.get_me(get_hwid())
-        print(status_code,resp)
+        
         if status_code == 200:
             return True
         else:

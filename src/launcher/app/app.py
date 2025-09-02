@@ -41,10 +41,10 @@ class Laucher:
             title=ft.Row(
                     [
                         
-                        ft.Button('Главная'),
-                        ft.Button('Настройки'),
-                        ft.Button('Магазин'),
-                        ft.Button('О нас'),
+                        ft.Button('Главная', on_click=lambda e: self.screen_manager.navigate_to('home')),
+                        ft.Button('Настройки', on_click=lambda e: self.screen_manager.navigate_to('settings')),
+                        ft.Button('Магазин', on_click=lambda e: self.screen_manager.navigate_to('home')),
+                        ft.Button('О нас', on_click=lambda e: self.screen_manager.navigate_to('about')),
                     ],
                     
                 ),
@@ -58,7 +58,7 @@ class Laucher:
         # Initialize screens with navigator dependency        
         self.screen_manager.add_screen('home', HomeScreen(self.screen_manager, self.api))
         self.screen_manager.add_screen('settings', SettingsScreen(self.screen_manager))
-        self.screen_manager.add_screen('profile', AboutScreen(self.screen_manager))
+        self.screen_manager.add_screen('about', AboutScreen(self.screen_manager))
 
     def run_laucher(self):
         self.setup_screens()

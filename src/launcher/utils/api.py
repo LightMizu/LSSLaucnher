@@ -1,10 +1,11 @@
 import requests
 from typing import Optional, Tuple, List
 import os
-
+import hashlib
+import logging
 APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA')
 
-URL = 'http://127.0.0.1/'
+URL = 'https://lsslaucher.ru'
 
 class API:
     def __init__(self, token:Optional[str] = None):
@@ -26,11 +27,11 @@ class API:
             'hwid': hwid,
         }
         response = requests.post(f'{URL}/auth/token', headers=headers, data=data)
-        print(response.status_code)
-        print(response.text)
+        
+        
         if response.status_code == 200:
             response_json = response.json()
-            self.token = f'{response_json['token_type']} {response_json['access_token']}'
+            self.token = f'{response_json['token_type'].capitalize()} {response_json['access_token']}'
             
         return response.status_code
     
@@ -52,22 +53,50 @@ class API:
         }
 
         param = {
-            'skip': 0,
+            'skip': 1,
             'limit': 100,
         }
-        print(f'{URL}/files', headers, param)
-        response = requests.get(f'{URL}/files', headers=headers, params=param)
-        print(response.status_code, response.json())
+        
+        response = requests.get(f'{URL}/files/', headers=headers, params=param)
+        
         return response.status_code, response.json()
     
-    def download_file(self, url, name):
-        print('start_dowload')
+    def get_file(self, id_file: int) -> dict:
+        headers = {
+            'accept': 'application/json',
+            'Authorization': self.token,
+        }
+
+        response = requests.get(f'{URL}/files/{id_file}', headers=headers)
+        return response.status_code, response.json()
+
+    def download_file(self, url, name, hash=None):
         local_filename = os.path.join(APP_DATA_PATH, name)
-        if os.path.isfile(local_filename):
-            return local_filename
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
+            total_size = int(r.headers.get("Content-Length", 0))
+            # Проверяем локальный файл
+            if os.path.isfile(local_filename):
+                if hash:
+                    md5_local = hashlib.md5()
+                    with open(local_filename, 'rb') as f:
+                        for chunk in iter(lambda: f.read(8192), b''):
+                            md5_local.update(chunk)
+                    md5_local_hex = md5_local.hexdigest()
+                    if md5_local_hex == hash:
+                        yield total_size, total_size  # прогресс сразу 100%
+                        return local_filename
+                    else:
+                        logging.warning("Хэш локального файла не совпадает, перезаписываем.")
+                else:
+                    return local_filename
+            # Скачиваем файл по кускам с прогрессом
+            downloaded = 0
             with open(local_filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192): 
-                    f.write(chunk)
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        yield downloaded, total_size
         return local_filename
+

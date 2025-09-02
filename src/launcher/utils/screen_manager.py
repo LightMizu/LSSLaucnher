@@ -19,7 +19,6 @@ class ScreenManager(Navigator):
             self.page.on_resized = screen.on_resize
             self.page.update()
         else:
-            print(self.screens)
             print(f'Screen {screen_name} not found')
 
     def get_main_container(self) -> ft.Container:
