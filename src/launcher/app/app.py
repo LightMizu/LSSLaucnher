@@ -19,7 +19,7 @@ class Laucher:
     def set_default_path(self):
         path = self.page.client_storage.get('lsslaucher.dota_path')
         if not path:
-            self.page.client_storage.set('lsslaucher.dota_path',get_dota2_install_path())
+            self.page.client_storage.set('lsslaucher.dota_path',get_dota2_install_path() or "")
 
     def try_authenticate_user(self):
         token = self.page.client_storage.get('lsslaucher.token')

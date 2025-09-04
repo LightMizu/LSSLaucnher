@@ -50,7 +50,7 @@ class HomeScreen(Screen):
             select_button.on_click = on_click_factory()
 
             self.list_files.append(PackCard(file, select_button))
-
+        #list pack
         self.packs_column = ft.SafeArea(
             ft.Column(
                 self.list_files,
@@ -59,6 +59,17 @@ class HomeScreen(Screen):
             ),
             minimum_padding=20,
         )
+
+        #Status dialog
+        self.status_text = ft.Text()
+        self.error_text = ft.Text()
+        self.status_icon = ft.Icon()
+        self.status_dialog = ft.AlertDialog(
+            title=ft.Row([self.status_icon,self.status_text]),
+            content=self.error_text,
+            alignment=ft.alignment.center,
+            title_padding=ft.padding.all(25))
+
         return ft.Container(
             content=ft.Row(
                 [
@@ -82,7 +93,7 @@ class HomeScreen(Screen):
             ),
             alignment=ft.alignment.center,
         )
-
+        
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()
@@ -113,15 +124,22 @@ class HomeScreen(Screen):
         # Отмечаем выбранный pack
         self.selected_pack = id_pack
         self.navigator.page.update()
-
+    
+    def open_status_dialog(self, status, text, icon):
+        self.status_icon.name = icon
+        self.status_text.value = status
+        self.error_text.value = text
+        self.navigator.page.open(self.status_dialog)
+    
     def launch(self, e):
         launch_dota()
 
     def delete_pack(self, e:ft.ControlEventType):
-        e.control.text = "Удаление..."
         self.navigator.page.update()
+        if self.navigator.page.client_storage.get('lsslaucher.dota_path') == "":
+            self.open_status_dialog("Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED)
+            return
         delete_pack(self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
-        e.control.text = "Удалить"
         self.navigator.page.update()
 
     def install_pack_handler(self, e):
@@ -130,9 +148,10 @@ class HomeScreen(Screen):
         id_pack = self.selected_pack
         
         if id_pack == -1:
-            print("Пак не выбран")
+            self.open_status_dialog("Ошибка", "Пак не выбран", ft.Icons.CLOSE_ROUNDED)
             return
-        name_file = get_uuid_file(id_pack)
-        install_pack(name_file, self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
+        #sname_file = get_uuid_file(id_pack)
+        #install_pack(name_file, self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
         e.control.text = "Установить"
+        self.open_status_dialog("Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED)
         self.navigator.page.update()
