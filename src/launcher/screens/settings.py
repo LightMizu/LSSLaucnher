@@ -1,18 +1,15 @@
 from .screen import Screen
 import flet as ft
-from launcher.utils.install_pack import get_dota2_install_path
 
 class SettingsScreen(Screen):
     def __init__(self, navigator):
         self.navigator = navigator
         self.folder_picker = None
-        self.selected_path = ft.Text('Папка не выбрана', size=16)
-        if self.navigator.page.client_storage.contains_key('lsslaucher.dota_path'):
-            self.selected_path.value = self.navigator.page.client_storage.get('lsslaucher.dota_path')
-        else:
-            path = get_dota2_install_path()
-            self.selected_path.value = path
-            self.navigator.page.client_storage.set('lsslaucher.dota_path', path)
+        self.selected_path = ft.Text(size=16)
+
+        self.selected_path.value = self.navigator.page.client_storage.get('lsslaucher.dota_path')
+        if self.selected_path.value == "":
+            self.selected_path.value = 'Папка не выбрана'
         self.folder_picker = ft.FilePicker(on_result=self.on_pick_result)
         self.navigator.page.overlay.append(self.folder_picker)
 
@@ -37,7 +34,8 @@ class SettingsScreen(Screen):
                             ft.Container(
                                 self.selected_path,
                                 border_radius=50,
-                                padding=10,
+                                padding=ft.Padding(10,2,10,2),
+                                
                                 border=ft.border.all(
                                     3, ft.Colors.ON_SECONDARY_CONTAINER
                                 ),

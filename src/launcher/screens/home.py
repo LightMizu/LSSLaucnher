@@ -63,9 +63,9 @@ class HomeScreen(Screen):
         #Status dialog
         self.status_text = ft.Text()
         self.error_text = ft.Text()
-        self.status_icon = ft.Icon()
+        self.status_icon = ft.Icon(size=40)
         self.status_dialog = ft.AlertDialog(
-            title=ft.Row([self.status_icon,self.status_text]),
+            title=ft.Row([self.status_icon, self.status_text], vertical_alignment=ft.CrossAxisAlignment.CENTER),
             content=self.error_text,
             alignment=ft.alignment.center,
             title_padding=ft.padding.all(25))
@@ -143,15 +143,14 @@ class HomeScreen(Screen):
         self.navigator.page.update()
 
     def install_pack_handler(self, e):
-        e.control.text = "Установка..."
         self.navigator.page.update()
         id_pack = self.selected_pack
-        
+
         if id_pack == -1:
             self.open_status_dialog("Ошибка", "Пак не выбран", ft.Icons.CLOSE_ROUNDED)
             return
-        #sname_file = get_uuid_file(id_pack)
-        #install_pack(name_file, self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
-        e.control.text = "Установить"
+
+        name_file = get_uuid_file(id_pack)
+        install_pack(name_file, self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
         self.open_status_dialog("Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED)
         self.navigator.page.update()
