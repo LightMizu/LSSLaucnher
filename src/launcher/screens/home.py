@@ -13,8 +13,8 @@ class PackCard(ft.Container):
             content=ft.SafeArea(
                 ft.Row(
                     [
-                        ft.Text(file['name']),
-                        ft.FilledButton('Скрины', url=file['screenshost']),
+                        ft.Text(file["name"]),
+                        ft.FilledButton("Скрины", url=file["screenshost"]),
                         self.select_button,
                         self.progress_ring,
                     ],
@@ -26,7 +26,7 @@ class PackCard(ft.Container):
             bgcolor=ft.Colors.ON_SECONDARY,
             border_radius=20,
         )
-        
+
 
 class HomeScreen(Screen):
     def __init__(self, navigator, api: API):
@@ -44,13 +44,14 @@ class HomeScreen(Screen):
             # Создаём функцию-обёртку, чтобы замыкание работало правильно
             def on_click_factory(f=file, btn=select_button):
                 def on_click(e):
-                    self.select_pack(f['id'], btn)
+                    self.select_pack(f["id"], btn)
+
                 return on_click
 
             select_button.on_click = on_click_factory()
 
             self.list_files.append(PackCard(file, select_button))
-        #list pack
+        # list pack
         self.packs_column = ft.SafeArea(
             ft.Column(
                 self.list_files,
@@ -60,32 +61,56 @@ class HomeScreen(Screen):
             minimum_padding=20,
         )
 
-        #Status dialog
-        self.status_text = ft.Text()
-        self.error_text = ft.Text()
-        self.status_icon = ft.Icon(size=40)
+        # Status dialog
+        self.status_text = ft.Text(size=30)
+        self.error_text = ft.Text(size=25)
+        self.status_icon = ft.Icon(size=50)
         self.status_dialog = ft.AlertDialog(
-            title=ft.Row([self.status_icon, self.status_text], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+            title=ft.Row(
+                [
+                    self.status_icon,
+                    self.status_text,
+                ],
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
             content=self.error_text,
             alignment=ft.alignment.center,
-            title_padding=ft.padding.all(25))
+            title_padding=ft.padding.all(25),
+            content_padding=ft.padding.all(50),
+        )
 
         return ft.Container(
             content=ft.Row(
                 [
                     ft.Column(
                         [
-                            ft.OutlinedButton(text='Запустить игру', height=50, width=200, on_click=self.launch),
-                            ft.OutlinedButton(text='Установить', height=50, width=200, on_click=self.install_pack_handler),
                             ft.OutlinedButton(
-                                text='Пофиксить VAC', height=50, width=200
+                                text="Запустить игру",
+                                height=75,
+                                width=300,
+                                on_click=self.launch,
                             ),
-                            ft.OutlinedButton(text='Удалить', height=50, width=200, on_click=self.delete_pack),
-                            ft.Image('assets/logo.png', height=200, width=200),
+                            ft.OutlinedButton(
+                                text="Установить",
+                                height=75,
+                                width=300,
+                                on_click=self.install_pack_handler,
+                            ),
+                            ft.OutlinedButton(
+                                text="Пофиксить VAC", height=75, width=300, disabled=True
+                            ),
+                            ft.OutlinedButton(
+                                text="Удалить",
+                                height=75,
+                                width=300,
+                                on_click=self.delete_pack,
+                            ),
+                            ft.Image("assets/logo.png", height=200, width=200),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        width=300,
+                        width=500,
                     ),
                     ft.VerticalDivider(width=5, color=ft.Colors.PRIMARY),
                     self.packs_column,
@@ -93,7 +118,7 @@ class HomeScreen(Screen):
             ),
             alignment=ft.alignment.center,
         )
-        
+
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()
@@ -106,43 +131,53 @@ class HomeScreen(Screen):
         card.select_button.visible = False
         self.navigator.page.update()
         # Находим файл
-        file = find_by_key(self.files, 'id', id_pack)
-        #получаем uuid 
-        name_file = get_uuid_file(file['id'])
+        file = find_by_key(self.files, "id", id_pack)
+        assert file
+        # получаем uuid
+        name_file = get_uuid_file(file["id"])
         # Скачиваем файл
-        for downloaded, total in self.api.download_file(file['download_url'], name_file, file['md5']):
-            card.progress_ring.value = downloaded/total
+        for downloaded, total in self.api.download_file(
+            file["download_url"], name_file, file["md5"]
+        ):
+            card.progress_ring.value = downloaded / total
             self.navigator.page.update()
         card.progress_ring.visible = False
         card.select_button.visible = True
         # Сбрасываем иконки у всех карточек
         for i, card in enumerate(self.list_files):
             card.select_button.icon = ft.Icons.CIRCLE_OUTLINED
-            
+
         # После загрузки ставим выбранную иконку
         button.icon = ft.Icons.CIRCLE_ROUNDED
         # Отмечаем выбранный pack
         self.selected_pack = id_pack
         self.navigator.page.update()
-    
+
     def open_status_dialog(self, status, text, icon):
         self.status_icon.name = icon
         self.status_text.value = status
         self.error_text.value = text
         self.navigator.page.open(self.status_dialog)
-    
+
     def launch(self, e):
         launch_dota()
 
-    def delete_pack(self, e:ft.ControlEventType):
+    def delete_pack(self, _):
         self.navigator.page.update()
-        if self.navigator.page.client_storage.get('lsslaucher.dota_path') == "":
-            self.open_status_dialog("Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED)
+        if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
+            self.open_status_dialog(
+                "Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED
+            )
             return
-        delete_pack(self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
+        delete_pack(
+            self.navigator.page.client_storage.get("lsslaucher.dota_path"), self.api
+        )
+        self.open_status_dialog(
+                "Успех", "Пак удалён", ft.Icons.CHECK_ROUNDED
+            )
         self.navigator.page.update()
 
-    def install_pack_handler(self, e):
+    def install_pack_handler(self, _):
         self.navigator.page.update()
         id_pack = self.selected_pack
 
@@ -151,6 +186,12 @@ class HomeScreen(Screen):
             return
 
         name_file = get_uuid_file(id_pack)
-        install_pack(name_file, self.navigator.page.client_storage.get('lsslaucher.dota_path'), self.api)
-        self.open_status_dialog("Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED)
+        install_pack(
+            name_file,
+            self.navigator.page.client_storage.get("lsslaucher.dota_path"),
+            self.api,
+        )
+        self.open_status_dialog(
+            "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
+        )
         self.navigator.page.update()
