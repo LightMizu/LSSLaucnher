@@ -4,7 +4,7 @@ from src.launcher.utils.api import API
 import shutil
 import winreg
 from pathlib import Path
-from launcher.utils.helpers import get_uuid_file, file_sha1, file_crc32
+from src.launcher.utils.helpers import get_uuid_file, file_sha1, file_crc32
 import subprocess
 from typing import Union
 APP_DATA_PATH:str = os.getenv('FLET_APP_STORAGE_DATA') or ""
