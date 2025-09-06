@@ -3,7 +3,7 @@ from typing import Optional, Tuple, List
 import os
 import hashlib
 import logging
-APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA')
+APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA') or ""
 
 URL = 'https://lsslaucher.ru'
 
@@ -46,7 +46,7 @@ class API:
         response = requests.get(f'{URL}/users/me', headers=headers)
         return response.status_code, response.json()
 
-    def get_files(self, skip, limit) -> List[dict]:
+    def get_files(self, skip, limit) -> Tuple[int,List[dict]]:
         headers = {
             'accept': 'application/json',
             'Authorization': self.token,
@@ -61,7 +61,7 @@ class API:
         
         return response.status_code, response.json()
     
-    def get_file(self, id_file: int) -> dict:
+    def get_file(self, id_file: int) -> Tuple[int,dict]:
         headers = {
             'accept': 'application/json',
             'Authorization': self.token,

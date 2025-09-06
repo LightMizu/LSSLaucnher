@@ -9,7 +9,7 @@ class AuthScreen(Screen):
         self.api: API = api
         self.on_succes_auth = on_succes_auth
 
-    def on_resize(self, container: ft.Container) -> None:
+    def on_resize(self, e) -> None:
         self.auth_container.height = self.navigator.page.height
         self.auth_container.width = self.navigator.page.width
         self.login_field.width = self.navigator.page.width // 4
@@ -20,7 +20,7 @@ class AuthScreen(Screen):
 
         if (
             self.api.get_token(
-                self.login_field.value, self.password_field.value, get_hwid()
+                self.login_field.value, self.password_field.value, get_hwid() #type: ignore
             )
             == 200
         ):

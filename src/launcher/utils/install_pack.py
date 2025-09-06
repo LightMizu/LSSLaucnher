@@ -2,12 +2,12 @@ import os
 import platform
 from src.launcher.utils.api import API
 import shutil
-
+import winreg
 from pathlib import Path
 from launcher.utils.helpers import get_uuid_file, file_sha1, file_crc32
 import subprocess
-
-APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA')
+from typing import Union
+APP_DATA_PATH:str = os.getenv('FLET_APP_STORAGE_DATA') or ""
 GAMEINFO_SPECIFICBRANCH = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-Dota2/refs/heads/master/game/dota/gameinfo_branchspecific.gi"
 
 
@@ -20,13 +20,13 @@ def get_dota2_install_path():
     system = platform.system()
 
     if system == 'Windows':
-        import winreg
+        
         try:
             # Check common Steam install paths via registry
             reg_path = r'Software\Valve\Steam'
             try:
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path) as key:
-                    steam_path = winreg.QueryValueEx(key, 'SteamPath')[0]
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path) as key: #type: ignore
+                    steam_path = winreg.QueryValueEx(key, 'SteamPath')[0] #type: ignore
             except FileNotFoundError:
                 # Fallback to default Steam path
                 steam_path = os.path.expandvars(r'%ProgramFiles(x86)%\Steam')
@@ -95,7 +95,7 @@ def get_dota2_install_path():
 
     return None
 
-def install_pack(uuid: str, dota_path: str, api: API):
+def install_pack(uuid: str, dota_path: Union[str,Path], api: API):
     dota_path = Path(dota_path)
     data_path = Path(APP_DATA_PATH)
     game_branch_info_folder = dota_path / "game" / "dota"
@@ -140,7 +140,7 @@ def launch_dota(extra_args=None):
 
     subprocess.Popen(cmd)
 
-def delete_pack(dota_path: str, api: API):
+def delete_pack(dota_path: Union[str,Path], api: API):
     dota_path = Path(dota_path)
     game_branch_info_folder = dota_path / "game" / "dota"
     data_path = Path(APP_DATA_PATH)
@@ -155,7 +155,7 @@ def delete_pack(dota_path: str, api: API):
 
 
 
-def patch_dota(dota_path: str, api):
+def patch_dota(dota_path: Union[str,Path], api):
     dota_path = Path(dota_path)
     sign_path = Path("game/dota/dota.signatures")
     gi_file = Path("game/dota/gameinfo_branchspecific.gi")
