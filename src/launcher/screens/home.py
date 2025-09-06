@@ -14,7 +14,16 @@ class PackCard(ft.Container):
                 ft.Row(
                     [
                         ft.Text(file["name"]),
-                        ft.FilledButton("Скрины", url=file["screenshost"]),
+                        ft.FilledButton(
+                            "Скрины",
+                            url=file["screenshost"],
+                            bgcolor=ft.Colors.INVERSE_PRIMARY,
+                            color=ft.Colors.WHITE,
+                            style=ft.ButtonStyle(
+                                text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
+                                
+                            ),
+                        ),
                         self.select_button,
                         self.progress_ring,
                     ],
@@ -22,7 +31,7 @@ class PackCard(ft.Container):
                 ),
                 minimum_padding=20,
             ),
-            height=75,
+            height=85,
             bgcolor=ft.Colors.ON_SECONDARY,
             border_radius=20,
         )
@@ -55,9 +64,12 @@ class HomeScreen(Screen):
         self.packs_column = ft.SafeArea(
             ft.Column(
                 self.list_files,
-                width=self.navigator.page.width - 355,
+                expand=True,
                 scroll=ft.ScrollMode.ADAPTIVE,
+                
             ),
+            expand=True,
+            
             minimum_padding=20,
         )
 
@@ -90,21 +102,36 @@ class HomeScreen(Screen):
                                 height=75,
                                 width=300,
                                 on_click=self.launch,
+                                style=ft.ButtonStyle(
+                                    text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
+                                ),
                             ),
                             ft.OutlinedButton(
                                 text="Установить",
                                 height=75,
                                 width=300,
                                 on_click=self.install_pack_handler,
+                                style=ft.ButtonStyle(
+                                    text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
+                                ),
                             ),
                             ft.OutlinedButton(
-                                text="Пофиксить VAC", height=75, width=300, disabled=True
+                                text="Пофиксить VAC",
+                                height=75,
+                                width=300,
+                                disabled=True,
+                                style=ft.ButtonStyle(
+                                    text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
+                                ),
                             ),
                             ft.OutlinedButton(
                                 text="Удалить",
                                 height=75,
                                 width=300,
                                 on_click=self.delete_pack,
+                                style=ft.ButtonStyle(
+                                    text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
+                                ),
                             ),
                             ft.Image("assets/logo.png", height=200, width=200),
                         ],

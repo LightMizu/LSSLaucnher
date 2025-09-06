@@ -26,17 +26,12 @@ class Laucher:
         self.page = page
         self.page.title = "LSSLauncher"
         self.page.theme_mode = ft.ThemeMode.DARK
-        self.page.window.width = 500
-        self.page.window.height = 250
-        self.page.window.max_height = 250
-        self.page.window.max_width = 500
-        self.page.window.min_height = 250
-        self.page.window.min_width = 500
+        self.page.window.width = 1200
+        self.page.window.height = 700
         self.page.window.focused = True
-        self.page.window.title_bar_hidden = True
+        self.page.window.title_bar_hidden = False
         self.page.window.resizable = False
-        self.page.window.always_on_top = True
-        self.page.window.frameless = True
+        self.page.window.maximizable = False
         self.page.theme = ft.Theme(color_scheme_seed=ft.Colors.PURPLE_300)
         self.page.dark_theme = ft.Theme(color_scheme_seed=ft.Colors.PURPLE_300)
         self.screen_manager = ScreenManager(page)
@@ -69,20 +64,21 @@ class Laucher:
     def handle_change(self, e: ft.ControlEvent):
         assert e.data
         value = e.data[2:-2]
-        self.selector.margin = ft.margin.only(
-            left=((self.page.width - 20)) / 4 * self.pages.index(value)# type: ignore
-        )  
+        page_width = self.page.window.width - (self.page.padding or 10) - (self.page.padding or 10) -15
+        self.selector_container.padding=ft.padding.only(right=page_width*(3-self.pages.index(value))//4,left=page_width*self.pages.index(value)//4)
+        
         self.page.update()
-        if value == "shop":
-            return
         self.screen_manager.navigate_to(value)
 
     def setup_appbar(self):
+        #self.page.show_semantics_debugger = True
+        page_width = self.page.window.width - (self.page.padding or 10) - (self.page.padding or 10) - 15
         self.selector = ft.Container(
             height=2,
             bgcolor=ft.Colors.PRIMARY,
             animate=ft.Animation(250, ft.AnimationCurve.EASE_IN),
-        )
+            expand=True,
+            expand_loose=True)
         self.pages_container: ft.Container = ft.Container(
             content=ft.Row(
                 [
@@ -111,14 +107,15 @@ class Laucher:
             height=70,
         )
         self.pages = ["home", "settings", "shop", "about"]
+        self.selector_container = ft.Container(self.selector, expand=True,padding=ft.padding.only(right=page_width*3//4),animate=ft.Animation(250, ft.AnimationCurve.EASE_IN))
         self.app_bar = ft.Column(
             [
                 self.pages_container,
-                self.selector,
+                self.selector_container
             ]
         )
 
-        self.selector.width = (1250) / 4  # type: ignore
+        #self.selector.width = (1250) / 4  # type: ignore
         self.page.appbar = self.app_bar  # type: ignore
 
     def setup_auth_screen(self):
