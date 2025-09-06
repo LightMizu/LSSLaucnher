@@ -2,7 +2,7 @@ import flet as ft
 from .screen import Screen
 from src.launcher.utils.api import API
 from src.launcher.utils.helpers import find_by_key, get_uuid_file
-from src.launcher.utils.install_pack import install_pack, launch_dota, delete_pack
+from src.launcher.utils.install_pack import install_pack, launch_dota, delete_pack, patch_dota
 
 
 class PackCard(ft.Container):
@@ -119,7 +119,8 @@ class HomeScreen(Screen):
                                 text="Пофиксить VAC",
                                 height=75,
                                 width=300,
-                                disabled=True,
+                                #disabled=True,
+                                on_click=self.fix_vac,
                                 style=ft.ButtonStyle(
                                     text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
                                 ),
@@ -207,7 +208,11 @@ class HomeScreen(Screen):
     def install_pack_handler(self, _):
         self.navigator.page.update()
         id_pack = self.selected_pack
-
+        if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
+                    self.open_status_dialog(
+                        "Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED
+                    )
+                    return
         if id_pack == -1:
             self.open_status_dialog("Ошибка", "Пак не выбран", ft.Icons.CLOSE_ROUNDED)
             return
@@ -222,3 +227,13 @@ class HomeScreen(Screen):
             "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
         )
         self.navigator.page.update()
+    def fix_vac(self, e):
+        if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
+            self.open_status_dialog(
+                "Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED
+            )
+            return
+        patch_dota(self.navigator.page.client_storage.get("lsslaucher.dota_path"), self.api)
+        self.open_status_dialog(
+            "Успех", "ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED
+        )
