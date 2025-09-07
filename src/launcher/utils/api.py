@@ -2,9 +2,12 @@ import requests
 from typing import Optional, Tuple, List
 import os
 import hashlib
-import logging
+from src.launcher.utils.download import download
+import gzip
+import shutil
+from pathlib import Path
 APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA') or ""
-
+print(APP_DATA_PATH)
 URL = 'https://lsslaucher.ru'
 
 class API:
@@ -70,33 +73,39 @@ class API:
         response = requests.get(f'{URL}/files/{id_file}', headers=headers)
         return response.status_code, response.json()
 
-    def download_file(self, url, name, hash=None):
-        local_filename = os.path.join(APP_DATA_PATH, name)
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            total_size = int(r.headers.get("Content-Length", 0))
-            # Проверяем локальный файл
-            if os.path.isfile(local_filename):
-                if hash:
-                    md5_local = hashlib.md5()
-                    with open(local_filename, 'rb') as f:
-                        for chunk in iter(lambda: f.read(8192), b''):
-                            md5_local.update(chunk)
-                    md5_local_hex = md5_local.hexdigest()
-                    if md5_local_hex == hash:
-                        yield total_size, total_size  # прогресс сразу 100%
-                        return local_filename
-                    else:
-                        logging.warning("Хэш локального файла не совпадает, перезаписываем.")
-                else:
-                    return local_filename
-            # Скачиваем файл по кускам с прогрессом
-            downloaded = 0
-            with open(local_filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
+    def download_range(self,url, start, end, part_file):
+        print(f'скачиваем часть {start}-{end}')
+        headers = {"Range": f"bytes={start}-{end}"}
+        with requests.get(url, headers=headers, stream=True) as rr:
+            rr.raise_for_status()
+            with open(part_file, "wb") as f:
+                for chunk in rr.iter_content(8192):
                     if chunk:
                         f.write(chunk)
-                        downloaded += len(chunk)
-                        yield downloaded, total_size
-        return local_filename
+
+    def download_file(self, url, name, hash_file):
+        local_filename = Path(APP_DATA_PATH) / name
+
+        # Проверяем локальный файл
+        if os.path.isfile(local_filename):
+            if hash_file:
+                md5_local = hashlib.md5()
+                with open(local_filename, 'rb') as f:
+                    for chunk in iter(lambda: f.read(8192), b''):
+                        md5_local.update(chunk)
+                md5_local_hex = md5_local.hexdigest()
+                if md5_local_hex == hash_file:
+                    print("Хэш локального файла совпадает")
+                    return
+                else:
+                    print("Хэш локального файла не совпадает, перезаписываем.")
+            else:
+                return
+
+        download(url,f'{local_filename}.gz')
+        with gzip.open(f'{local_filename}.gz', "rb") as f_in:
+            with open(local_filename, "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        os.remove(f'{local_filename}.gz')
+        return 
 

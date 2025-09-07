@@ -1,8 +1,9 @@
 import os
 import platform
 from src.launcher.utils.api import API
+from src.launcher.utils.download import download
 import shutil
-import winreg
+
 from pathlib import Path
 from src.launcher.utils.helpers import get_uuid_file, file_sha1, file_crc32
 import subprocess
@@ -20,7 +21,7 @@ def get_dota2_install_path():
     system = platform.system()
 
     if system == 'Windows':
-        
+        import winreg
         try:
             # Check common Steam install paths via registry
             reg_path = r'Software\Valve\Steam'
@@ -104,8 +105,8 @@ def install_pack(uuid: str, dota_path: Union[str,Path], api: API):
     vpk_folder.mkdir(parents=True, exist_ok=True)
     _, game_branch_file = api.get_file(1)
     local_branch_file = get_uuid_file(1)
-    for dowl,total in api.download_file(game_branch_file['download_url'], local_branch_file, game_branch_file['md5']):
-        pass
+    api.download_file(game_branch_file['download_url'], local_branch_file, game_branch_file['md5'])
+
     game_branch_file_path = data_path / local_branch_file
     # Копирование gameinfo файла
     dest_gameinfo = game_branch_info_folder / "gameinfo_branchspecific.gi"
@@ -140,14 +141,13 @@ def launch_dota(extra_args=None):
 
     subprocess.Popen(cmd)
 
-def delete_pack(dota_path: Union[str,Path], api: API):
+def delete_pack(dota_path: Union[str,Path]):
     dota_path = Path(dota_path)
     game_branch_info_folder = dota_path / "game" / "dota"
     data_path = Path(APP_DATA_PATH)
     uuid_gameinfo = get_uuid_file("original_gameinfo")
-    for dowl,total in api.download_file(GAMEINFO_SPECIFICBRANCH, uuid_gameinfo):
-        pass
     game_branch_file_path = data_path / uuid_gameinfo
+    download(GAMEINFO_SPECIFICBRANCH, game_branch_file_path)
     # Копирование gameinfo файла
     dest_gameinfo = game_branch_info_folder / "gameinfo_branchspecific.gi"
     shutil.copyfile(game_branch_file_path, dest_gameinfo)
@@ -165,12 +165,11 @@ def patch_dota(dota_path: Union[str,Path], api):
     _, game_branch_file = api.get_file(1)
     local_branch_file = Path(APP_DATA_PATH) / get_uuid_file(1)
 
-    for dowl, total in api.download_file(
+    api.download_file(
         game_branch_file['download_url'],
         local_branch_file,
         game_branch_file['md5']
-    ):
-        pass
+    )
 
     # === 2. Проверка SHA1 скачанного файла ===
     downloaded_sha = file_sha1(local_branch_file)

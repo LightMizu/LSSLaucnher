@@ -43,8 +43,6 @@ class HomeScreen(Screen):
         self.api: API = api
         self.selected_pack = -1
         status_code, self.files = api.get_files(0, 100)
-
-    def build(self) -> ft.Container:
         self.list_files = []
 
         for file in self.files:
@@ -91,8 +89,7 @@ class HomeScreen(Screen):
             title_padding=ft.padding.all(25),
             content_padding=ft.padding.all(50),
         )
-
-        return ft.Container(
+        self.main_container = ft.Container(
             content=ft.Row(
                 [
                     ft.Column(
@@ -146,6 +143,8 @@ class HomeScreen(Screen):
             ),
             alignment=ft.alignment.center,
         )
+    def build(self) -> ft.Container:
+        return self.main_container
 
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
@@ -164,11 +163,9 @@ class HomeScreen(Screen):
         # получаем uuid
         name_file = get_uuid_file(file["id"])
         # Скачиваем файл
-        for downloaded, total in self.api.download_file(
+        self.api.download_file(
             file["download_url"], name_file, file["md5"]
-        ):
-            card.progress_ring.value = downloaded / total
-            self.navigator.page.update()
+        )
         card.progress_ring.visible = False
         card.select_button.visible = True
         # Сбрасываем иконки у всех карточек
@@ -198,7 +195,7 @@ class HomeScreen(Screen):
             )
             return
         delete_pack(
-            self.navigator.page.client_storage.get("lsslaucher.dota_path"), self.api
+            self.navigator.page.client_storage.get("lsslaucher.dota_path")
         )
         self.open_status_dialog(
                 "Успех", "Пак удалён", ft.Icons.CHECK_ROUNDED
@@ -227,6 +224,7 @@ class HomeScreen(Screen):
             "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
         )
         self.navigator.page.update()
+
     def fix_vac(self, e):
         if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
             self.open_status_dialog(
