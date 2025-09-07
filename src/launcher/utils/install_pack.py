@@ -147,7 +147,7 @@ def delete_pack(dota_path: Union[str,Path]):
     data_path = Path(APP_DATA_PATH)
     uuid_gameinfo = get_uuid_file("original_gameinfo")
     game_branch_file_path = data_path / uuid_gameinfo
-    download(GAMEINFO_SPECIFICBRANCH, game_branch_file_path)
+    download(GAMEINFO_SPECIFICBRANCH, game_branch_file_path) #type: ignore
     # Копирование gameinfo файла
     dest_gameinfo = game_branch_info_folder / "gameinfo_branchspecific.gi"
     shutil.copyfile(game_branch_file_path, dest_gameinfo)
