@@ -74,10 +74,10 @@ class Laucher:
         self.screen_manager.navigate_to(value)
 
     def setup_appbar(self):
-        assert self.page.width
+        assert self.page.window.width
         #self.page.show_semantics_debugger = True
         self.page.update()
-        page_width = self.page.width - 20
+        page_width = self.page.window.width - 20
         self.selector = ft.Container(
             height=2,
             bgcolor=ft.Colors.PRIMARY,
