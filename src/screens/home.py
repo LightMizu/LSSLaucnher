@@ -1,7 +1,7 @@
 import flet as ft
-from src.launcher.utils.api import API
-from src.launcher.utils.helpers import find_by_key, get_uuid_file, human_readable_size
-from src.launcher.utils.install_pack import (
+from src.utils.api import API
+from src.utils.helpers import find_by_key, get_uuid_file, human_readable_size
+from src.utils.install_pack import (
     delete_pack,
     install_pack,
     launch_dota,
@@ -140,7 +140,7 @@ class HomeScreen(Screen):
                                     text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
                                 ),
                             ),
-                            ft.Image(Path('src/launcher/assets/icon_windows.png'), height=200, width=200),
+                            ft.Image(str(Path('src/assets/icon.png')), height=200, width=200),
                         ],
                         spacing=20,
                         alignment=ft.MainAxisAlignment.CENTER,

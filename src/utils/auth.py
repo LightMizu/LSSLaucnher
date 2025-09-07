@@ -1,5 +1,5 @@
-from src.launcher.utils.api import API
-from src.launcher.utils.hwid import get_hwid
+from src.utils.api import API
+from src.utils.hwid import get_hwid
 
 class AuthUtil:
     def __init__(self, api: API):

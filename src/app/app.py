@@ -1,7 +1,7 @@
 import flet as ft
 
-from src.launcher.screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen
-from src.launcher.utils import API, AuthUtil, ScreenManager, get_dota2_install_path
+from src.screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen
+from src.utils import API, AuthUtil, ScreenManager, get_dota2_install_path
 from pathlib import Path
 
 def nav_segment(value: str, label: str, disabled: bool = False):
@@ -21,12 +21,11 @@ def nav_segment(value: str, label: str, disabled: bool = False):
     )
 
 
-class Laucher:
+class Launcher:
     def __init__(self, page: ft.Page):
         self.page = page
         self.page.title = "LSSLauncher"
-        self.page.window.icon = Path('src/launcher/assets/icon.ico')
-        print(str(self.page.window.icon))
+        self.page.window.icon = str(Path('src/assets/icon.ico'))
         self.page.theme_mode = ft.ThemeMode.DARK
         self.page.window.width = 1200
         self.page.window.height = 700

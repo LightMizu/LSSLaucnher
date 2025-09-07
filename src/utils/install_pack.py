@@ -1,11 +1,11 @@
 import os
 import platform
-from src.launcher.utils.api import API
-from src.launcher.utils.download import download
+from src.utils.api import API
+from src.utils.download import download
 import shutil
 
 from pathlib import Path
-from src.launcher.utils.helpers import get_uuid_file, file_sha1, file_crc32
+from src.utils.helpers import get_uuid_file, file_sha1, file_crc32
 import subprocess
 from typing import Union
 APP_DATA_PATH:str = os.getenv('FLET_APP_STORAGE_DATA') or ""

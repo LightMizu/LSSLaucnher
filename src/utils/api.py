@@ -2,7 +2,7 @@ import requests
 from typing import Optional, Tuple, List
 import os
 import hashlib
-from src.launcher.utils.download import download
+from src.utils.download import download
 import gzip
 import shutil
 from pathlib import Path

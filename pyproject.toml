@@ -1,5 +1,5 @@
 [project]
-name = "launcher"
+name = "LSSLauncher"
 version = "0.1.0"
 description = ""
 authors = [
@@ -15,7 +15,11 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "launcher", from = "src"}]
+packages = [
+    { include = "app", from = "src" },
+    { include = "screens", from = "src" },
+    { include = "utils", from = "src" },
+]
 
 [tool.poetry.scripts]
 start = "main:main"

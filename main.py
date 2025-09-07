@@ -1,10 +1,10 @@
 import flet as ft
-from src.launcher.app import Laucher
+from app import Launcher
 from pathlib import Path
 
 
 def main(page: ft.Page):
-    app = Laucher(page)
+    app = Launcher(page)
     app.run()
 
 if __name__ == '__main__':
