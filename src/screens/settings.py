@@ -39,6 +39,7 @@ class SettingsScreen(Screen):
                                     border_radius=50,
                                     padding=ft.Padding(10, 2, 10, 2),
                                     height=40,
+                                    alignment=ft.alignment.center,
                                     border=ft.border.all(
                                         2, ft.Colors.ON_SECONDARY_CONTAINER
                                     ),
