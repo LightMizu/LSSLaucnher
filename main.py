@@ -1,5 +1,5 @@
 import flet as ft
-from app import Launcher
+from src.app import Launcher
 from pathlib import Path
 
 
