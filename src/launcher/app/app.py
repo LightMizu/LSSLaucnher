@@ -26,6 +26,7 @@ class Laucher:
         self.page = page
         self.page.title = "LSSLauncher"
         self.page.window.icon = Path('src/launcher/assets/icon.ico')
+        print(str(self.page.window.icon))
         self.page.theme_mode = ft.ThemeMode.DARK
         self.page.window.width = 1200
         self.page.window.height = 700
