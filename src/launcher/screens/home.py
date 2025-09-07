@@ -140,7 +140,7 @@ class HomeScreen(Screen):
                                     text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
                                 ),
                             ),
-                            ft.Image("assets/logo.png", height=200, width=200),
+                            ft.Image("src/assets/logo.png", height=200, width=200),
                         ],
                         spacing=20,
                         alignment=ft.MainAxisAlignment.CENTER,
