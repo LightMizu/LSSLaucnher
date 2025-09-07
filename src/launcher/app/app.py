@@ -63,19 +63,19 @@ class Laucher:
 
     def handle_change(self, e: ft.ControlEvent):
         assert e.data
-        assert self.page.window.width
+        assert self.page.width
 
         value = e.data[2:-2]
-        page_width = self.page.window.width - 35 
+        page_width = self.page.width - 20 
         self.selector_container.padding=ft.padding.only(right=page_width*(3-self.pages.index(value))//4,left=page_width*self.pages.index(value)//4)
         
         self.page.update()
         self.screen_manager.navigate_to(value)
 
     def setup_appbar(self):
-        assert self.page.window.width
+        assert self.page.width
         #self.page.show_semantics_debugger = True
-        page_width = self.page.window.width - 35
+        page_width = self.page.width - 20
         self.selector = ft.Container(
             height=2,
             bgcolor=ft.Colors.PRIMARY,
