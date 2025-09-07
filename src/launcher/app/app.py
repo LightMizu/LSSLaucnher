@@ -67,7 +67,8 @@ class Laucher:
 
         value = e.data[2:-2]
         page_width = self.page.width - 20 
-        self.selector_container.padding=ft.padding.only(right=page_width*(3-self.pages.index(value))//4,left=page_width*self.pages.index(value)//4)
+        segment_width = page_width/4
+        self.selector_container.padding=ft.padding.only(right=segment_width*(3-self.pages.index(value)),left=segment_width*self.pages.index(value))
         
         self.page.update()
         self.screen_manager.navigate_to(value)
@@ -110,7 +111,9 @@ class Laucher:
             height=70,
         )
         self.pages = ["home", "settings", "shop", "about"]
-        self.selector_container = ft.Container(self.selector, expand=True,padding=ft.padding.only(right=page_width*3//4),animate=ft.Animation(250, ft.AnimationCurve.EASE_IN))
+        segment_width = page_width//4
+
+        self.selector_container = ft.Container(self.selector, expand=True,padding=ft.padding.only(right=segment_width*3),animate=ft.Animation(250, ft.AnimationCurve.EASE_IN))
         self.app_bar = ft.Column(
             [
                 self.pages_container,
