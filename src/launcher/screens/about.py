@@ -17,9 +17,9 @@ class AboutScreen(Screen):
                     ft.Text("Создатели:", size=30, weight=ft.FontWeight.BOLD),
                     ft.Row(
                         [
-                            ft.TextButton("@DestroyRules", url='https://t.me/DestroyRules'),
-                            ft.TextButton("@removed_person", url='https://t.me/removed_person'),
-                            ft.TextButton("@Lsq231", url='https://t.me/Lsq231'),
+                            ft.TextButton("Darkness", url='https://t.me/Darkness_Logovo'),
+                            ft.TextButton("Light", url='https://t.me/removed_person'),
+                            ft.TextButton("Lssqqqq", url='https://t.me/lssqqqq'),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         expand=True,

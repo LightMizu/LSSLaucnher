@@ -2,8 +2,6 @@ import uuid
 import hashlib
 import zlib
 from pathlib import Path
-import requests
-from concurrent.futures import ThreadPoolExecutor
 
 def find_by_key(items, key, value) -> dict[str, str]|None:
     return next((item for item in items if item.get(key) == value), None) 
@@ -36,46 +34,20 @@ def file_crc32(path: Path) -> str:
     le_bytes = crc.to_bytes(4, 'big')[::-1]
     return le_bytes.hex().upper()
 
-
-def download_range(url, start, end, part_file):
-    headers = {"Range": f"bytes={start}-{end}"}
-    with requests.get(url, headers=headers, stream=True) as r:
-        r.raise_for_status()
-        with open(part_file, "wb") as f:
-            for chunk in r.iter_content(8192):
-                if chunk:
-                    f.write(chunk)
-
-def parallel_download(url: str, output: str, num_threads: int = 8):
-    # Узнаём размер файла
-    r = requests.head(url)
-    file_size = int(r.headers.get("Content-Length", 0))
-    if file_size == 0:
-        raise Exception("Не удалось узнать размер файла")
-
-    part_size = file_size // num_threads
-    parts = []
-
-    def task(i, start, end):
-        part_file = f"{output}.part{i}"
-        download_range(url, start, end, part_file)
-        return part_file
-
-    # Качаем параллельно
-    with ThreadPoolExecutor(max_workers=num_threads) as ex:
-        futures = []
-        for i in range(num_threads):
-            start = i * part_size
-            end = (i + 1) * part_size - 1 if i < num_threads - 1 else file_size - 1
-            futures.append(ex.submit(task, i, start, end))
-        for f in futures:
-            parts.append(f.result())
-
-    # Склеиваем части
-    with open(output, "wb") as final:
-        for part in sorted(parts):
-            with open(part, "rb") as pf:
-                final.write(pf.read())
-            Path(part).unlink()
-
-    print(f"✅ Файл сохранён: {output}")
+def human_readable_size(num_bytes: int, decimal_places: int = 2) -> str:
+    """
+    Преобразует число байтов в удобный для чтения формат.
+    
+    :param num_bytes: количество байтов
+    :param decimal_places: количество знаков после запятой
+    :return: строка вида '10.23 MB'
+    """
+    calc_bytes = num_bytes
+    if calc_bytes < 0:
+        raise ValueError("Размер не может быть отрицательным")
+    
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB', 'PB']:
+        if calc_bytes < 1000:
+            return f"{calc_bytes:.{decimal_places}f} {unit}"
+        calc_bytes /= 1000
+    return f"{calc_bytes:.{decimal_places}f} PB"

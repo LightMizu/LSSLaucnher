@@ -1,7 +1,7 @@
 import flet as ft
 from .screen import Screen
 from src.launcher.utils.api import API
-from src.launcher.utils.helpers import find_by_key, get_uuid_file
+from src.launcher.utils.helpers import find_by_key, get_uuid_file,human_readable_size
 from src.launcher.utils.install_pack import install_pack, launch_dota, delete_pack, patch_dota
 
 
@@ -13,7 +13,7 @@ class PackCard(ft.Container):
             content=ft.SafeArea(
                 ft.Row(
                     [
-                        ft.Text(file["name"]),
+                        ft.Text(file["name"], expand=True),
                         ft.FilledButton(
                             "Скрины",
                             url=file["screenshost"],
@@ -24,10 +24,12 @@ class PackCard(ft.Container):
                                 
                             ),
                         ),
+                        ft.Text(human_readable_size(file["size"]), color=ft.Colors.SECONDARY,width=100),
                         self.select_button,
                         self.progress_ring,
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    spacing=30,
                 ),
                 minimum_padding=20,
             ),
@@ -88,6 +90,7 @@ class HomeScreen(Screen):
             alignment=ft.alignment.center,
             title_padding=ft.padding.all(25),
             content_padding=ft.padding.all(50),
+            on_dismiss=self.on_dismiss
         )
         self.main_container = ft.Container(
             content=ft.Row(
@@ -96,7 +99,7 @@ class HomeScreen(Screen):
                         [
                             ft.OutlinedButton(
                                 text="Запустить игру",
-                                height=75,
+                                height=70,
                                 width=300,
                                 on_click=self.launch,
                                 style=ft.ButtonStyle(
@@ -105,7 +108,7 @@ class HomeScreen(Screen):
                             ),
                             ft.OutlinedButton(
                                 text="Установить",
-                                height=75,
+                                height=70,
                                 width=300,
                                 on_click=self.install_pack_handler,
                                 style=ft.ButtonStyle(
@@ -114,7 +117,7 @@ class HomeScreen(Screen):
                             ),
                             ft.OutlinedButton(
                                 text="Пофиксить VAC",
-                                height=75,
+                                height=70,
                                 width=300,
                                 #disabled=True,
                                 on_click=self.fix_vac,
@@ -124,7 +127,7 @@ class HomeScreen(Screen):
                             ),
                             ft.OutlinedButton(
                                 text="Удалить",
-                                height=75,
+                                height=70,
                                 width=300,
                                 on_click=self.delete_pack,
                                 style=ft.ButtonStyle(
@@ -133,6 +136,7 @@ class HomeScreen(Screen):
                             ),
                             ft.Image("assets/logo.png", height=200, width=200),
                         ],
+                        spacing=20,
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         width=500,
@@ -178,7 +182,12 @@ class HomeScreen(Screen):
         self.selected_pack = id_pack
         self.navigator.page.update()
 
+    def on_dismiss(self, e):
+        self.status_dialog.content=self.error_text
+
     def open_status_dialog(self, status, text, icon):
+        if not text:
+            self.status_dialog.content=None
         self.status_icon.name = icon
         self.status_text.value = status
         self.error_text.value = text
@@ -191,7 +200,7 @@ class HomeScreen(Screen):
         self.navigator.page.update()
         if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
             self.open_status_dialog(
-                "Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED
+                "Ошибка: Не установлен путь до папки дота 2", None, ft.Icons.CLOSE_ROUNDED
             )
             return
         delete_pack(
@@ -207,11 +216,11 @@ class HomeScreen(Screen):
         id_pack = self.selected_pack
         if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
                     self.open_status_dialog(
-                        "Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED
+                        "Ошибка: Не установлен путь до папки дота 2", None, ft.Icons.CLOSE_ROUNDED
                     )
                     return
         if id_pack == -1:
-            self.open_status_dialog("Ошибка", "Пак не выбран", ft.Icons.CLOSE_ROUNDED)
+            self.open_status_dialog("Ошибка: Пак не выбран", None, ft.Icons.CLOSE_ROUNDED)
             return
 
         name_file = get_uuid_file(id_pack)
@@ -228,7 +237,7 @@ class HomeScreen(Screen):
     def fix_vac(self, e):
         if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
             self.open_status_dialog(
-                "Ошибка", "Не установлен путь до папки дота 2", ft.Icons.CLOSE_ROUNDED
+                "Ошибка: Не установлен путь до папки дота 2", None, ft.Icons.CLOSE_ROUNDED
             )
             return
         patch_dota(self.navigator.page.client_storage.get("lsslaucher.dota_path"), self.api)
