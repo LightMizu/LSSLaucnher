@@ -7,7 +7,7 @@ from src.launcher.utils.install_pack import (
     launch_dota,
     patch_dota,
 )
-
+from pathlib import Path
 from .screen import Screen
 
 
@@ -140,7 +140,7 @@ class HomeScreen(Screen):
                                     text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
                                 ),
                             ),
-                            ft.Image("src/launcher/assets/icon.png", height=200, width=200),
+                            ft.Image(Path('src/launcher/assets/icon.png'), height=200, width=200),
                         ],
                         spacing=20,
                         alignment=ft.MainAxisAlignment.CENTER,
