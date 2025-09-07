@@ -1,8 +1,14 @@
 import flet as ft
-from .screen import Screen
 from src.launcher.utils.api import API
-from src.launcher.utils.helpers import find_by_key, get_uuid_file,human_readable_size
-from src.launcher.utils.install_pack import install_pack, launch_dota, delete_pack, patch_dota
+from src.launcher.utils.helpers import find_by_key, get_uuid_file, human_readable_size
+from src.launcher.utils.install_pack import (
+    delete_pack,
+    install_pack,
+    launch_dota,
+    patch_dota,
+)
+
+from .screen import Screen
 
 
 class PackCard(ft.Container):
@@ -24,7 +30,7 @@ class PackCard(ft.Container):
                                 
                             ),
                         ),
-                        ft.Text(human_readable_size(file["size"]), color=ft.Colors.SECONDARY,width=100),
+                        ft.Text(human_readable_size(file["size"]),text_align=ft.TextAlign.CENTER, color=ft.Colors.SECONDARY,width=100),
                         self.select_button,
                         self.progress_ring,
                     ],
@@ -88,7 +94,7 @@ class HomeScreen(Screen):
             ),
             content=self.error_text,
             alignment=ft.alignment.center,
-            title_padding=ft.padding.all(25),
+            title_padding=ft.padding.all(20),
             content_padding=ft.padding.all(50),
             on_dismiss=self.on_dismiss
         )
@@ -184,10 +190,12 @@ class HomeScreen(Screen):
 
     def on_dismiss(self, e):
         self.status_dialog.content=self.error_text
+        self.status_dialog.title_padding = ft.padding.all(20)
 
     def open_status_dialog(self, status, text, icon):
         if not text:
             self.status_dialog.content=None
+            self.status_dialog.title_padding = ft.padding.only(25, 21, 25, 0)
         self.status_icon.name = icon
         self.status_text.value = status
         self.error_text.value = text
