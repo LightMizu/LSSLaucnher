@@ -76,6 +76,7 @@ class Laucher:
     def setup_appbar(self):
         assert self.page.width
         #self.page.show_semantics_debugger = True
+        self.page.update()
         page_width = self.page.width - 20
         self.selector = ft.Container(
             height=2,
