@@ -1,7 +1,7 @@
 import flet as ft
 
-from src.screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen
-from src.utils import API, AuthUtil, ScreenManager, get_dota2_install_path
+from screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen
+from utils import API, AuthUtil, ScreenManager, get_dota2_install_path
 from pathlib import Path
 
 def nav_segment(value: str, label: str, disabled: bool = False):

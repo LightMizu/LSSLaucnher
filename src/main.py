@@ -1,5 +1,5 @@
 import flet as ft
-from src.app import Launcher
+from app import Launcher
 from pathlib import Path
 
 
@@ -8,4 +8,4 @@ def main(page: ft.Page):
     app.run()
 
 if __name__ == '__main__':
-    ft.app(target=main)
+    ft.app(target=main, assets_dir='assets')

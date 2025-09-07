@@ -1,6 +1,6 @@
 from .screen import Screen
 import flet as ft
-from src.utils import API, get_hwid
+from utils import API, get_hwid
 
 
 class AuthScreen(Screen):

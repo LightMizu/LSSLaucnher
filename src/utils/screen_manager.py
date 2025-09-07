@@ -1,7 +1,7 @@
 from .navigator import Navigator
 import flet as ft
 from typing import Dict
-from src.screens.screen import Screen
+from screens.screen import Screen
 
 class ScreenManager(Navigator):
     def __init__(self, page: ft.Page):
