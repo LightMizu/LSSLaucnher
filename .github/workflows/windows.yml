@@ -18,11 +18,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Устанавливаем Flutter stable
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.27.0'  # или любая релизнутая версия
+        flutter-version: '3.29.2'
         channel: 'stable'
         architecture: x64
 
@@ -31,14 +30,18 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install dependencies
+    - name: Install Poetry & Dependencies
       run: |
+        python -m pip install --upgrade pip
         python -m pip install poetry
+        poetry config virtualenvs.create false --local
         poetry install
 
+    - name: Install Flet CLI
+      run: python -m pip install "flet==${{ env.FLET_CLI_VERSION }}"
+
     - name: Flet Build Windows
-      run: |
-        poetry run flet build windows --verbose --no-rich-output
+      run: poetry run flet build windows --verbose --no-rich-output
 
     - name: Upload Windows Artifact
       uses: actions/upload-artifact@v4.3.4
