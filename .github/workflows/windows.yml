@@ -22,8 +22,9 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: "stable"
-        channel: stable
+        flutter-version: '3.27.0'  # или любая релизнутая версия
+        channel: 'stable'
+        architecture: x64
 
     - name: Setup Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v5
