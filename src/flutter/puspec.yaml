@@ -1,0 +1,30 @@
+name: lsslauncher
+description: My Flet + Flutter application
+version: 0.1.0+1
+publish_to: "none"  # не публикуем
+
+environment:
+  sdk: ">=3.0.0 <3.8.0"
+  flutter: ">=3.7.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flet: 0.28.3
+  webview_flutter_android: 4.10.1
+  aiohttp: ">=3.12.15,<4.0.0"
+  psutil: ">=7.0.0,<8.0.0"
+  requests: ">=2.32.3,<3.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 2.0.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/  # сюда положи все свои картинки/иконки
+
+dependency_overrides:
+  webview_flutter_android: 4.10.1
