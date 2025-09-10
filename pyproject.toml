@@ -31,8 +31,6 @@ copyright = "Copyright (C) 2025 by Flet"
 path = "src"
 
 
-[tool.poetry.group.dev.dependencies]
-flet = {extras = ["all"], version = "0.28.3"}
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
