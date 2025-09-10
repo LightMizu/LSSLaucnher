@@ -45,6 +45,7 @@ class AuthScreen(Screen):
         self.auth_container = ft.Container(
             content=ft.Column(
                 [
+                    ft.Image('icon.png', height=200, width=200),
                     self.login_field,
                     self.password_field,
                     self.error_text,
