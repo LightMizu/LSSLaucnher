@@ -125,7 +125,7 @@ class HomeScreen(Screen):
                                 text="Пофиксить VAC",
                                 height=70,
                                 width=300,
-                                #disabled=True,
+                                # disabled=True,
                                 on_click=self.fix_vac,
                                 style=ft.ButtonStyle(
                                     text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
@@ -140,9 +140,13 @@ class HomeScreen(Screen):
                                     text_style=ft.TextStyle(weight=ft.FontWeight.W_700)
                                 ),
                             ),
-                            ft.Image('icon.png', height=200, width=200),
+                            ft.Container(
+                                ft.Image("icon.png", expand=True),
+                                width=180,
+                                height=180,
+                                padding=ft.padding.all(10)
+                            ),
                         ],
-                        spacing=20,
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         width=500,

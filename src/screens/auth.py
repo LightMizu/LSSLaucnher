@@ -45,11 +45,16 @@ class AuthScreen(Screen):
         self.auth_container = ft.Container(
             content=ft.Column(
                 [
-                    ft.Image('icon.png', height=200, width=200),
+                    ft.Container(
+                        ft.Image("icon.png", height=200, width=200),
+                        width=300,
+                        height=300,
+                        alignment=ft.alignment.center,
+                    ),
                     self.login_field,
                     self.password_field,
                     self.error_text,
-                    ft.ElevatedButton('Login', on_click=self.auth),
+                    ft.ElevatedButton("Login", on_click=self.auth, width=self.navigator.page.width / 6, height=40),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
