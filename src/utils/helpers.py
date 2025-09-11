@@ -2,6 +2,10 @@ import uuid
 import hashlib
 import zlib
 from pathlib import Path
+import os
+import subprocess
+import platform
+
 
 def find_by_key(items, key, value) -> dict[str, str]|None:
     return next((item for item in items if item.get(key) == value), None) 
@@ -51,3 +55,12 @@ def human_readable_size(num_bytes: int, decimal_places: int = 2) -> str:
             return f"{calc_bytes:.{decimal_places}f} {unit}"
         calc_bytes /= 1000
     return f"{calc_bytes:.{decimal_places}f} PB"
+
+
+def open_folder(path):
+    if platform.system() == "Windows":
+        os.startfile(path)
+    elif platform.system() == "Darwin":  # macOS
+        subprocess.Popen(["open", path])
+    else:  # Linux
+        subprocess.Popen(["xdg-open", path])

@@ -1,11 +1,12 @@
 import flet as ft
 from utils.api import API
-from utils.helpers import find_by_key, get_uuid_file, human_readable_size
+from utils.helpers import find_by_key, get_uuid_file, human_readable_size, open_folder
 from utils.install_pack import (
     delete_pack,
     install_pack,
     launch_dota,
     patch_dota,
+    APP_DATA_PATH
 )
 from pathlib import Path
 from .screen import Screen
@@ -37,10 +38,11 @@ class PackCard(ft.Container):
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     spacing=30,
                 ),
-                minimum_padding=20,
+                minimum_padding=ft.padding.all(20),
             ),
             height=85,
             bgcolor=ft.Colors.ON_SECONDARY,
+            expand=True,
             border_radius=20,
         )
 
@@ -52,7 +54,37 @@ class HomeScreen(Screen):
         self.selected_pack = -1
         status_code, self.files = api.get_files(0, 100)
         self.list_files = []
-
+        self.install_custom_file_picker = ft.FilePicker(on_result=self.install_custom)
+        self.navigator.page.overlay.append(self.install_custom_file_picker)
+        self.install_custom_pack_button = ft.Button(
+            "+Свой пак",
+            expand=True,
+            on_click=lambda x: self.navigator.page.open(
+                self.install_custom_pack_dialog
+            ),
+        )
+        print(APP_DATA_PATH)
+        self.install_custom_pack_dialog = ft.AlertDialog(
+            modal=True,
+            title="Установка своего пака",
+            content=ft.Text(
+                "Для установки пака нужно переместить vpk в папку лаунчера"
+            ),
+            actions=[
+                ft.TextButton(
+                    "Открыть папку", on_click=lambda x: open_folder(APP_DATA_PATH)
+                ),
+                ft.TextButton(
+                    "Выбрать vpk",
+                    on_click=lambda _: self.install_custom_file_picker.pick_files(
+                        "Открыть Vpk",
+                        initial_directory=APP_DATA_PATH,
+                        allowed_extensions=["vpk"],
+                    ),
+                ),
+            ],
+        )
+        
         for file in self.files:
             select_button = ft.IconButton(ft.Icons.CIRCLE_OUTLINED)
 
@@ -65,20 +97,22 @@ class HomeScreen(Screen):
 
             select_button.on_click = on_click_factory()
 
-            self.list_files.append(PackCard(file, select_button))
+            self.list_files.append(ft.Container(PackCard(file, select_button),padding=ft.padding.only(right=15)))
         # list pack
         self.packs_column = ft.SafeArea(
-            ft.Column(
-                self.list_files,
-                expand=True,
-                scroll=ft.ScrollMode.ADAPTIVE,
-                
+            ft.Stack(
+                [
+                    ft.Column(
+                        self.list_files,
+                        expand=True,
+                        scroll=ft.ScrollMode.ADAPTIVE,
+                    ),
+                    ft.Container(self.install_custom_pack_button,height=30, width=100)
+                ],alignment=ft.alignment.bottom_left
             ),
             expand=True,
-            
-            minimum_padding=20,
         )
-
+        
         # Status dialog
         self.status_text = ft.Text(size=30)
         self.error_text = ft.Text(size=25)
@@ -256,3 +290,22 @@ class HomeScreen(Screen):
         self.open_status_dialog(
             "Успех", "ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED
         )
+
+    def install_custom(self, e: ft.FilePickerResultEvent):
+        self.navigator.page.close(self.install_custom_pack_dialog)
+        if not e.path:
+            return
+        if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
+            self.open_status_dialog(
+                "Ошибка: Не установлен путь до папки дота 2", None, ft.Icons.CLOSE_ROUNDED
+            )
+            return
+        install_pack(
+            Path(str(e.path)).name,
+            self.navigator.page.client_storage.get("lsslaucher.dota_path"),
+            self.api,
+        )
+        self.open_status_dialog(
+            "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
+        )
+        self.navigator.page.update()
