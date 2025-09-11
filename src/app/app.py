@@ -143,11 +143,16 @@ class Launcher:
         )
         self.screen_manager.add_screen("settings", SettingsScreen(self.screen_manager))
         self.screen_manager.add_screen("about", AboutScreen(self.screen_manager))
-
+    
+    def close(self, e):
+        self.page.window.close()
+    
     def run_laucher(self):
         self.setup_screens()
         self.setup_appbar()
         self.page.window.frameless = True
+        self.page.bgcolor = ft.Colors.TRANSPARENT
+        self.page.window.title_bar_hidden = True
         self.page.clean()
         self.screen_manager.navigate_to("home")
         self.move_bar = ft.GestureDetector(
@@ -156,7 +161,7 @@ class Launcher:
                     [
                         ft.Text("Заголовок окна"),
                         ft.Container(
-                            ft.IconButton(ft.Icons.CLOSE_ROUNDED,icon_size=15, width=30,height=30),
+                            ft.IconButton(ft.Icons.CLOSE_ROUNDED,icon_size=15, width=30,height=30,on_click=self.close),
                             alignment=ft.alignment.top_right,
                         ),
                     ],
@@ -170,7 +175,7 @@ class Launcher:
             on_vertical_drag_update=self.move_window,
         )
         self.page.padding=0
-        self.page.bgcolor = ft.Colors.TRANSPARENT
+        
         self.page.add(
                 ft.Column([self.move_bar,self.app_bar, self.screen_manager.get_main_container()],expand=True,spacing=0)
         )
