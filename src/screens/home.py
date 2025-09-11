@@ -76,11 +76,7 @@ class HomeScreen(Screen):
                 ),
                 ft.TextButton(
                     "Выбрать vpk",
-                    on_click=lambda _: self.install_custom_file_picker.pick_files(
-                        "Открыть Vpk",
-                        initial_directory=APP_DATA_PATH,
-                        allowed_extensions=["vpk"],
-                    ),
+                    on_click=self.get_custom_vpk,
                 ),
             ],
         )
@@ -97,13 +93,13 @@ class HomeScreen(Screen):
 
             select_button.on_click = on_click_factory()
 
-            self.list_files.append(ft.Container(PackCard(file, select_button),padding=ft.padding.only(right=15)))
+            self.list_files.append(PackCard(file, select_button))
         # list pack
         self.packs_column = ft.SafeArea(
             ft.Stack(
                 [
                     ft.Column(
-                        self.list_files,
+                        list(map(lambda x: ft.Container(x,padding=ft.padding.only(right=15)),self.list_files)),
                         expand=True,
                         scroll=ft.ScrollMode.ADAPTIVE,
                     ),
@@ -194,6 +190,13 @@ class HomeScreen(Screen):
     def build(self) -> ft.Container:
         return self.main_container
 
+    def get_custom_vpk(self, e):
+        self.install_custom_file_picker.pick_files(
+                        "Открыть Vpk",
+                        initial_directory=APP_DATA_PATH,
+                        allowed_extensions=["vpk"],
+                    )
+    
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()
@@ -293,7 +296,10 @@ class HomeScreen(Screen):
 
     def install_custom(self, e: ft.FilePickerResultEvent):
         self.navigator.page.close(self.install_custom_pack_dialog)
-        if not e.path:
+        if not e.files:
+            return
+        filename = e.files[0].name
+        if not filename:
             return
         if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
             self.open_status_dialog(
@@ -301,7 +307,7 @@ class HomeScreen(Screen):
             )
             return
         install_pack(
-            Path(str(e.path)).name,
+            filename,
             self.navigator.page.client_storage.get("lsslaucher.dota_path"),
             self.api,
         )

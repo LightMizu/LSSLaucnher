@@ -59,7 +59,7 @@ def human_readable_size(num_bytes: int, decimal_places: int = 2) -> str:
 
 def open_folder(path):
     if platform.system() == "Windows":
-        os.startfile(path)
+        subprocess.Popen(["explorer", path])
     elif platform.system() == "Darwin":  # macOS
         subprocess.Popen(["open", path])
     else:  # Linux
