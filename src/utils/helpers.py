@@ -2,7 +2,6 @@ import uuid
 import hashlib
 import zlib
 from pathlib import Path
-import os
 import subprocess
 import platform
 

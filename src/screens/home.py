@@ -8,7 +8,6 @@ from utils.install_pack import (
     patch_dota,
     APP_DATA_PATH
 )
-from pathlib import Path
 from .screen import Screen
 
 
