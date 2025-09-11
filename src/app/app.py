@@ -28,7 +28,7 @@ class Launcher:
         self.page.window.icon = str(Path('src/assets/icon.ico'))
         self.page.theme_mode = ft.ThemeMode.DARK
         self.page.window.width = 1200
-        self.page.window.height = 700
+        self.page.window.height = 730
         self.page.window.focused = True
         self.page.window.title_bar_hidden = False
         self.page.window.resizable = False
@@ -67,7 +67,7 @@ class Launcher:
         assert self.page.width
 
         value = e.data[2:-2]
-        page_width = self.page.width - 20 
+        page_width = self.page.width 
         segment_width = page_width/4
         self.selector_container.padding=ft.padding.only(right=segment_width*(3-self.pages.index(value)),left=segment_width*self.pages.index(value))
         
@@ -78,7 +78,7 @@ class Launcher:
         assert self.page.window.width
         #self.page.show_semantics_debugger = True
         self.page.update()
-        page_width = self.page.window.width - 35
+        page_width = self.page.window.width
         self.selector = ft.Container(
             height=2,
             bgcolor=ft.Colors.PRIMARY,
@@ -124,13 +124,17 @@ class Launcher:
         )
 
         #self.selector.width = (1250) / 4  # type: ignore
-        self.page.appbar = self.app_bar  # type: ignore
+        #self.page.appbar = self.app_bar  # type: ignore
 
     def setup_auth_screen(self):
         self.screen_manager.add_screen(
             "auth",
             AuthScreen(self.screen_manager, self.api, self.try_authenticate_user),
         )
+
+    def move_window(self, e):
+        self.page.window.start_dragging()
+        
 
     def setup_screens(self):
         # Initialize screens with navigator dependency
@@ -143,9 +147,33 @@ class Launcher:
     def run_laucher(self):
         self.setup_screens()
         self.setup_appbar()
+        self.page.window.frameless = True
         self.page.clean()
         self.screen_manager.navigate_to("home")
-        self.page.add(self.screen_manager.get_main_container())
+        self.move_bar = ft.GestureDetector(
+            content=ft.Container(
+                ft.Stack(
+                    [
+                        ft.Text("Заголовок окна"),
+                        ft.Container(
+                            ft.IconButton(ft.Icons.CLOSE_ROUNDED,icon_size=15, width=30,height=30),
+                            alignment=ft.alignment.top_right,
+                        ),
+                    ],
+                    alignment=ft.alignment.center,
+                    height=30,
+                    width=self.page.width,
+                ),
+                bgcolor=ft.Colors.ON_SECONDARY,
+                border_radius=ft.border_radius.vertical(15),
+            ),
+            on_vertical_drag_update=self.move_window,
+        )
+        self.page.padding=0
+        self.page.bgcolor = ft.Colors.TRANSPARENT
+        self.page.add(
+                ft.Column([self.move_bar,self.app_bar, self.screen_manager.get_main_container()],expand=True,spacing=0)
+        )
 
     def run(self):
         self.setup_auth_screen()
