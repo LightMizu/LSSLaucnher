@@ -28,7 +28,7 @@ class Launcher:
         self.page.window.icon = str(Path('src/assets/icon.ico'))
         self.page.theme_mode = ft.ThemeMode.DARK
         self.page.window.width = 1200
-        self.page.window.height = 730
+        self.page.window.height = 715
         self.page.window.focused = True
         self.page.window.title_bar_hidden = False
         self.page.window.resizable = False
@@ -152,6 +152,7 @@ class Launcher:
         self.setup_appbar()
         self.page.window.frameless = True
         self.page.bgcolor = ft.Colors.TRANSPARENT
+        self.page.window.bgcolor = ft.Colors.TRANSPARENT
         self.page.window.title_bar_hidden = True
         self.page.clean()
         self.screen_manager.navigate_to("home")
@@ -177,7 +178,24 @@ class Launcher:
         self.page.padding=0
         
         self.page.add(
-                ft.Column([self.move_bar,self.app_bar, self.screen_manager.get_main_container()],expand=True,spacing=0)
+            ft.Column(
+                [
+                    self.move_bar,
+                    ft.Container(
+                        ft.Column(
+                            [self.app_bar, self.screen_manager.get_main_container()],
+                            expand=True,
+                            spacing=0,
+                        ),
+                        bgcolor=ft.Colors.SURFACE,
+                        expand=True,
+                        padding=ft.padding.all(5),
+                        border_radius=ft.border_radius.vertical(0,15),
+                        height=self.page.height
+                    ),
+                ],
+                spacing=0
+            )
         )
 
     def run(self):
