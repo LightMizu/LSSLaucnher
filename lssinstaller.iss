@@ -21,9 +21,9 @@ SolidCompression=yes
 WizardStyle=modern
 
 ; Кастомизация
-SetupIconFile=assets\setup.ico
-WizardImageFile=assets\banner.bmp
-WizardSmallImageFile=assets\sidebar.bmp
+SetupIconFile=installer_assets\setup.ico
+WizardImageFile=installer_assets\sidebar.bmp
+WizardSmallImageFile=installer_assets\banner.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
