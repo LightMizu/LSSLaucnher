@@ -23,7 +23,7 @@ WizardStyle=modern
 ; Кастомизация
 SetupIconFile=installer_assets\setup.ico
 WizardImageFile=installer_assets\sidebar.bmp
-WizardSmallImageFile=installer_assets\banner.png
+WizardSmallImageFile=installer_assets\banner.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
