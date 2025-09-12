@@ -79,7 +79,7 @@ class HomeScreen(Screen):
                 ),
             ],
         )
-        
+
         for file in self.files:
             select_button = ft.IconButton(ft.Icons.CIRCLE_OUTLINED)
 
@@ -98,16 +98,25 @@ class HomeScreen(Screen):
             ft.Stack(
                 [
                     ft.Column(
-                        list(map(lambda x: ft.Container(x,padding=ft.padding.only(right=15)),self.list_files)),
-                        expand=True,
+                        list(
+                            map(
+                                lambda x: ft.Container(
+                                    x, padding=ft.padding.only(right=15)
+                                ),
+                                self.list_files,
+                            )
+                        ),
+                        height=float('inf'),
                         scroll=ft.ScrollMode.ADAPTIVE,
                     ),
-                    ft.Container(self.install_custom_pack_button,height=30, width=100)
-                ],alignment=ft.alignment.bottom_left
+                    ft.Container(self.install_custom_pack_button, height=30, width=100),
+                ],
+                alignment=ft.alignment.bottom_left,
+                expand=True,
             ),
             expand=True,
         )
-        
+
         # Status dialog
         self.status_text = ft.Text(size=30)
         self.error_text = ft.Text(size=25)
@@ -182,7 +191,8 @@ class HomeScreen(Screen):
                     ),
                     ft.VerticalDivider(width=5, color=ft.Colors.PRIMARY),
                     self.packs_column,
-                ]
+                ],
+                expand=True
             ),
             alignment=ft.alignment.center,
         )
@@ -195,7 +205,7 @@ class HomeScreen(Screen):
                         initial_directory=APP_DATA_PATH,
                         allowed_extensions=["vpk"],
                     )
-    
+
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()
@@ -263,10 +273,10 @@ class HomeScreen(Screen):
         self.navigator.page.update()
         id_pack = self.selected_pack
         if self.navigator.page.client_storage.get("lsslaucher.dota_path") == "":
-                    self.open_status_dialog(
+            self.open_status_dialog(
                         "Ошибка: Не установлен путь до папки дота 2", None, ft.Icons.CLOSE_ROUNDED
                     )
-                    return
+            return
         if id_pack == -1:
             self.open_status_dialog("Ошибка: Пак не выбран", None, ft.Icons.CLOSE_ROUNDED)
             return
