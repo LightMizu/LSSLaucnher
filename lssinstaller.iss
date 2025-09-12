@@ -39,10 +39,8 @@ Source: "build\windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Icons]
 ; ярлык без аргументов
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-; ярлык с аргументами
-Name: "{group}\{#MyAppName} (Special)"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--update --server=prod"
 ; иконка на рабочий стол (с аргументами)
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--update"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 ; запуск сразу после установки с аргументами
