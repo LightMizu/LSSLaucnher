@@ -39,7 +39,8 @@ class AuthScreen(Screen):
             hint_text='Login', width=self.navigator.page.width // 4
         )
         self.password_field: ft.TextField = ft.TextField(
-            hint_text='Password', width=self.navigator.page.width // 4
+            hint_text='Password', width=self.navigator.page.width // 4,
+            password=True,can_reveal_password=True
         )
         self.error_text = ft.Text()
         self.auth_container = ft.Container(
