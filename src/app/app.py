@@ -160,7 +160,6 @@ class Launcher:
             content=ft.Container(
                 ft.Stack(
                     [
-                        ft.Text("Заголовок окна"),
                         ft.Container(
                             ft.IconButton(ft.Icons.CLOSE_ROUNDED,icon_size=15, width=30,height=30,on_click=self.close),
                             alignment=ft.alignment.top_right,

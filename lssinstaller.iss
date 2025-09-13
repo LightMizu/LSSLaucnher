@@ -1,4 +1,4 @@
-#define MyAppName "LSSLaucher"
+#define MyAppName "LSSLauncher"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "LSSProduction"
 #define MyAppURL "https://t.me"
