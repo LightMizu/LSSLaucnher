@@ -167,12 +167,14 @@ class Launcher:
                     ],
                     alignment=ft.alignment.center,
                     height=30,
-                    width=self.page.width,
+                    width=float('inf'),
                 ),
                 bgcolor=ft.Colors.ON_SECONDARY,
                 border_radius=ft.border_radius.vertical(15),
+                width=float('inf'),
             ),
             on_vertical_drag_update=self.move_window,
+            width=float('inf'),
         )
         self.page.padding=0
         
