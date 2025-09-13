@@ -11,6 +11,7 @@ from utils.install_pack import (
 from .screen import Screen
 import os
 
+
 class PackCard(ft.Container):
     def __init__(self, file: dict, select_button: ft.Control):
         self.select_button = select_button
@@ -73,6 +74,12 @@ class HomeScreen(Screen):
             ),
             actions=[
                 ft.TextButton(
+                    "Отмена",
+                    on_click=lambda x: self.navigator.page.close(
+                        self.install_custom_pack_dialog
+                    ),
+                ),
+                ft.TextButton(
                     "Открыть папку", on_click=lambda x: open_folder(APP_DATA_PATH)
                 ),
                 ft.TextButton(
@@ -81,20 +88,25 @@ class HomeScreen(Screen):
                 ),
             ],
         )
-        self.custom_vpk_list = ft.RadioGroup(content=ft.Column(controls=[]))
+        self.custom_vpk_list = ft.RadioGroup(
+            content=ft.Column(
+                controls=[],
+                height=self.navigator.page.height/4,
+                scroll=ft.ScrollMode.ADAPTIVE
+            )
+        )
         self.select_custom_pack_dialog = ft.AlertDialog(
             modal=True,
             title="Выбор своего пака",
             content=self.custom_vpk_list,
             actions=[
                 ft.TextButton(
-                    "Установить",
-                    on_click=self.install_custom
-                ),
-                ft.TextButton(
                     "Отмена",
-                    on_click=lambda x: self.navigator.page.close(self.select_custom_pack_dialog),
+                    on_click=lambda x: self.navigator.page.close(
+                        self.select_custom_pack_dialog
+                    ),
                 ),
+                ft.TextButton("Установить", on_click=self.install_custom),
             ],
         )
 
@@ -219,8 +231,18 @@ class HomeScreen(Screen):
         return self.main_container
 
     def get_custom_vpk(self, e):
-        files = [f for f in os.listdir(APP_DATA_PATH) if os.path.isfile(os.path.join(APP_DATA_PATH, f))]
-        list_files = [ft.Radio(value=x, label=os.path.splitext(x)[0]) for x in files if os.path.splitext(x)[1].lower() == ".vpk"]
+        assert isinstance(self.custom_vpk_list.content,ft.Column)
+        files = [
+            f
+            for f in os.listdir(APP_DATA_PATH)
+            if os.path.isfile(os.path.join(APP_DATA_PATH, f))
+        ]
+        files.sort()
+        list_files = [
+            ft.Radio(value=x, label=os.path.splitext(x)[0])
+            for x in files
+            if os.path.splitext(x)[1].lower() == ".vpk"
+        ]
         self.custom_vpk_list.content.controls = list_files
         self.navigator.page.close(self.install_custom_pack_dialog)
         self.navigator.page.open(self.select_custom_pack_dialog)
