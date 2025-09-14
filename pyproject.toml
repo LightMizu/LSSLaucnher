@@ -22,13 +22,20 @@ packages = [
 ]
 
 [tool.flet]
-org = "com.mycompany"
+org = "com.lssproduction"
 product = "lsslauncher"
-company = "Flet"
-copyright = "Copyright (C) 2025 by Flet"
+company = "LSSProduction"
+copyright = "Copyright (C) 2025 by LSSProduction"
+compile.app = true 
+compile.packages = true 
+compile.cleanup = true 
 
 [tool.flet.app]
 path = "src"
+
+[tool.flet.app.boot_screen]
+show = true
+message = "Preparing the app for its first launch…"
 
 [tool.flet.flutter.pubspec.dependency_overrides]
 webview_flutter_android = "4.10.1"
