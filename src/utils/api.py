@@ -1,11 +1,12 @@
 import requests
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Iterator
 import os
 import hashlib
 from utils.download import download
 import gzip
 import shutil
 from pathlib import Path
+
 APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA') or ""
 URL = 'https://lsslaucher.ru'
 
@@ -82,7 +83,8 @@ class API:
                     if chunk:
                         f.write(chunk)
 
-    def download_file(self, url, name, hash_file):
+    def download_file(self, url, name, hash_file) -> Iterator[float]:
+        print(f"Dowload {name}")
         local_filename = Path(APP_DATA_PATH) / name
 
         # Проверяем локальный файл
@@ -101,7 +103,8 @@ class API:
             else:
                 return
 
-        download(url,f'{local_filename}.gz')
+        for i in download(url,f'{local_filename}.gz'):
+            yield i
         with gzip.open(f'{local_filename}.gz', "rb") as f_in:
             with open(local_filename, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)

@@ -105,7 +105,9 @@ def install_pack(uuid: str, dota_path: Union[str,Path], api: API):
     vpk_folder.mkdir(parents=True, exist_ok=True)
     _, game_branch_file = api.get_file(1)
     local_branch_file = get_uuid_file(1)
-    api.download_file(game_branch_file['download_url'], local_branch_file, game_branch_file['md5'])
+    print("Dowloadn game_branch")
+    for _ in api.download_file(game_branch_file['download_url'], local_branch_file, game_branch_file['md5']):
+        pass
 
     game_branch_file_path = data_path / local_branch_file
     # Копирование gameinfo файла
@@ -124,7 +126,15 @@ def launch_dota(extra_args=None):
     system = platform.system()
 
     if system == "Windows":
-        steam_cmd = "C:\\Program Files (x86)\\Steam\\steam.exe"
+        import winreg
+        reg_path = r'Software\Valve\Steam'
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path) as key: #type: ignore
+                steam_path = winreg.QueryValueEx(key, 'SteamPath')[0] #type: ignore
+        except FileNotFoundError:
+            # Fallback to default Steam path
+            steam_path = os.path.expandvars(r'%ProgramFiles(x86)%\Steam')
+        steam_cmd = f"{steam_path}\\steam.exe"
     elif system == "Darwin":  # macOS
         steam_cmd = "/Applications/Steam.app/Contents/MacOS/steam_osx"
     elif system == "Linux":
@@ -147,7 +157,8 @@ def delete_pack(dota_path: Union[str,Path]):
     data_path = Path(APP_DATA_PATH)
     uuid_gameinfo = get_uuid_file("original_gameinfo")
     game_branch_file_path = data_path / uuid_gameinfo
-    download(GAMEINFO_SPECIFICBRANCH, game_branch_file_path) #type: ignore
+    for _ in download(GAMEINFO_SPECIFICBRANCH, game_branch_file_path):
+        pass#type: ignore
     # Копирование gameinfo файла
     dest_gameinfo = game_branch_info_folder / "gameinfo_branchspecific.gi"
     shutil.copyfile(game_branch_file_path, dest_gameinfo)

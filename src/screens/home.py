@@ -264,7 +264,10 @@ class HomeScreen(Screen):
         # получаем uuid
         name_file = get_uuid_file(file["id"])
         # Скачиваем файл
-        self.api.download_file(file["download_url"], name_file, file["md5"])
+
+        for progress in self.api.download_file(file["download_url"], name_file, file["md5"]):
+            card.progress_ring.value = progress/100
+            self.navigator.page.update()
         card.progress_ring.visible = False
         card.select_button.visible = True
         # Сбрасываем иконки у всех карточек
@@ -323,6 +326,7 @@ class HomeScreen(Screen):
             return
 
         name_file = get_uuid_file(id_pack)
+        print(name_file)
         install_pack(
             name_file,
             self.navigator.page.client_storage.get("lsslaucher.dota_path"),
