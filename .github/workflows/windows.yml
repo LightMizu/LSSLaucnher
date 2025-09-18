@@ -44,7 +44,7 @@ jobs:
       run: poetry run flet pack src\main.py --add-data "src\assets;assets" -i build_assets\setup.ico -y -n lsslauncher
 
     - name: Updater Build Windows
-      run: pyinstaller .\update.py --onefile --noconsole -i "build_assets\setup.ico" --name updater --add-data "build_assets;build_assets" -d imports
+      run: pyinstaller .\update.py --onefile --noconsole -i "build_assets\setup.ico" --name update --add-data "build_assets;build_assets" -d imports
 
     
     - name: Install Inno Setup
