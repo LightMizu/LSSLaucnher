@@ -1,14 +1,15 @@
 import os
 import platform
 from utils.api import API
-from utils.download import download
 import shutil
 
+from utils.dota_patcher import restore_dota,patch_dota as patch_d, DOTA_MOD_FOLDER
+from utils.helpers import get_folder
 from pathlib import Path
-from utils.helpers import get_uuid_file, file_sha1, file_crc32
+from utils.helpers import get_uuid_file
 import subprocess
 from typing import Union
-APP_DATA_PATH:str = os.getenv('FLET_APP_STORAGE_DATA') or ""
+APP_DATA_PATH:str = str(Path(get_folder())/"packs")
 GAMEINFO_SPECIFICBRANCH = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-Dota2/refs/heads/master/game/dota/gameinfo_branchspecific.gi"
 
 
@@ -99,20 +100,10 @@ def get_dota2_install_path():
 def install_pack(uuid: str, dota_path: Union[str,Path], api: API):
     dota_path = Path(dota_path)
     data_path = Path(APP_DATA_PATH)
-    game_branch_info_folder = dota_path / "game" / "dota"
     vpk_file = data_path / uuid
-    vpk_folder = dota_path / "game" / "Dota2SkinChanger"
+    vpk_folder = dota_path / "game" / DOTA_MOD_FOLDER
     vpk_folder.mkdir(parents=True, exist_ok=True)
-    _, game_branch_file = api.get_file(1)
-    local_branch_file = get_uuid_file(1)
-    print("Dowloadn game_branch")
-    for _ in api.download_file(game_branch_file['download_url'], local_branch_file, game_branch_file['md5']):
-        pass
-
-    game_branch_file_path = data_path / local_branch_file
-    # Копирование gameinfo файла
-    dest_gameinfo = game_branch_info_folder / "gameinfo_branchspecific.gi"
-    shutil.copyfile(game_branch_file_path, dest_gameinfo)
+    patch_d(dota_path=str(dota_path))
     # Копирование VPK файла
     dest_vpk = vpk_folder / "pak01_dir.vpk"
     shutil.copyfile(vpk_file, dest_vpk)
@@ -152,67 +143,8 @@ def launch_dota(extra_args=None):
     subprocess.Popen(cmd)
 
 def delete_pack(dota_path: Union[str,Path]):
-    dota_path = Path(dota_path)
-    game_branch_info_folder = dota_path / "game" / "dota"
-    data_path = Path(APP_DATA_PATH)
-    uuid_gameinfo = get_uuid_file("original_gameinfo")
-    game_branch_file_path = data_path / uuid_gameinfo
-    for _ in download(GAMEINFO_SPECIFICBRANCH, game_branch_file_path):
-        pass#type: ignore
-    # Копирование gameinfo файла
-    dest_gameinfo = game_branch_info_folder / "gameinfo_branchspecific.gi"
-    shutil.copyfile(game_branch_file_path, dest_gameinfo)
+    restore_dota(str(dota_path))
 
 
-
-
-def patch_dota(dota_path: Union[str,Path], api):
-    dota_path = Path(dota_path)
-    sign_path = Path("game/dota/dota.signatures")
-    gi_file = Path("game/dota/gameinfo_branchspecific.gi")
-    fon_path = Path("game/Dota2SkinChanger")
-    # === 1. Скачивание gameinfo через API ===
-    print("[...] скачиваем gameinfo_branchspecific.gi через API")
-    _, game_branch_file = api.get_file(1)
-    local_branch_file = Path(APP_DATA_PATH) / get_uuid_file(1)
-
-    api.download_file(
-        game_branch_file['download_url'],
-        local_branch_file,
-        game_branch_file['md5']
-    )
-
-    # === 2. Проверка SHA1 скачанного файла ===
-    downloaded_sha = file_sha1(local_branch_file)
-    downloaded_crc = file_crc32(local_branch_file)
-    print(f"[OK] SHA1 скачанного файла: {downloaded_sha}")
-    print(f"[OK] CRC32 скачанного файла: {downloaded_crc}")
-
-    # === 3. Копирование в папку Dota 2 ===
-    gi_file = dota_path / gi_file
-    shutil.copyfile(local_branch_file, gi_file)
-    print("[SUCCESS] gameinfo обновлён")
-
-    # === 4. Обновление sign file с реальным SHA1 и CRC32 ===
-    sign_file = dota_path / sign_path
-    sig_line = f"...\\dota\\gameinfo_branchspecific.gi~SHA1:{downloaded_sha};CRC:{downloaded_crc}\n"
-
-    if sign_file.exists():
-        content = sign_file.read_text(encoding="utf-8", errors="ignore")
-        if downloaded_sha not in content:
-            with open(sign_file, "a", encoding="utf-8") as fa:
-                fa.write(sig_line)
-            print("[PATCHED] signatures SHA1 и CRC32")
-        else:
-            print("[OK] signatures уже содержит этот SHA1")
-    else:
-        os.makedirs(sign_file.parent, exist_ok=True)
-        with open(sign_file, "w", encoding="utf-8") as fa:
-            fa.write(sig_line)
-        print("[CREATED] signatures создан и записан SHA1 и CRC32")
-
-    # === 5. Создать папку Dota2SkinChanger ===
-    fon_folder = dota_path / fon_path
-    fon_folder.mkdir(parents=True, exist_ok=True)
-    print("[OK] создана папка Dota2SkinChanger")
-
+def patch_dota(dota_path: Union[str,Path]):
+    patch_d(str(dota_path))

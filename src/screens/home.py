@@ -346,7 +346,7 @@ class HomeScreen(Screen):
             )
             return
         patch_dota(
-            self.navigator.page.client_storage.get("lsslaucher.dota_path"), self.api
+            self.navigator.page.client_storage.get("lsslaucher.dota_path")
         )
         self.open_status_dialog(
             "Успех", "ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED

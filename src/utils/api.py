@@ -6,8 +6,8 @@ from utils.download import download
 import gzip
 import shutil
 from pathlib import Path
-
-APP_DATA_PATH = os.getenv('FLET_APP_STORAGE_DATA') or ""
+from utils.helpers import get_folder
+APP_DATA_PATH = str(Path(get_folder())/"packs")
 URL = 'https://lsslaucher.ru'
 
 class API:
