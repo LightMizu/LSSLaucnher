@@ -1,8 +1,9 @@
 import flet as ft
-
 from screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen
 from utils import API, AuthUtil, ScreenManager, get_dota2_install_path
 from pathlib import Path
+from loguru import logger
+
 
 def nav_segment(value: str, label: str, disabled: bool = False):
     return ft.Segment(
@@ -39,44 +40,52 @@ class Launcher:
         self.api = API()
         self.auth_util = AuthUtil(self.api)
         self.set_default_path()
+        logger.info("Launcher initialized")
 
     def set_default_path(self):
         path = self.page.client_storage.get("lsslaucher.dota_path")
         if not path:
-            self.page.client_storage.set(
-                "lsslaucher.dota_path", get_dota2_install_path() or ""
-            )
+            default_path = get_dota2_install_path() or ""
+            self.page.client_storage.set("lsslaucher.dota_path", default_path)
+            logger.info(f"Set default Dota 2 path: {default_path}")
+        else:
+            logger.info(f"Using saved Dota 2 path: {path}")
 
     def try_authenticate_user(self):
         token = self.page.client_storage.get("lsslaucher.token")
         if not token:
+            logger.info("No token found, showing auth screen")
             self.show_auth_screen()
         else:
             self.api.token = token
             if self.auth_util.check_token_is_valid():
+                logger.info("Token valid, running launcher")
                 self.run_laucher()
             else:
+                logger.warning("Token invalid, showing auth screen")
                 self.show_auth_screen()
 
     def show_auth_screen(self):
+        logger.info("Navigating to auth screen")
         self.screen_manager.navigate_to("auth")
         self.page.add(self.screen_manager.get_main_container())
 
     def handle_change(self, e: ft.ControlEvent):
         assert e.data
         assert self.page.width
-
         value = e.data[2:-2]
-        page_width = self.page.width 
-        segment_width = page_width/4
-        self.selector_container.padding=ft.padding.only(right=segment_width*(3-self.pages.index(value)),left=segment_width*self.pages.index(value))
-        
+        page_width = self.page.width
+        segment_width = page_width / 4
+        self.selector_container.padding = ft.padding.only(
+            right=segment_width * (3 - self.pages.index(value)),
+            left=segment_width * self.pages.index(value)
+        )
         self.page.update()
+        logger.info(f"Segment changed, navigating to '{value}'")
         self.screen_manager.navigate_to(value)
 
     def setup_appbar(self):
         assert self.page.window.width
-        #self.page.show_semantics_debugger = True
         self.page.update()
         page_width = self.page.window.width
         self.selector = ft.Container(
@@ -84,70 +93,69 @@ class Launcher:
             bgcolor=ft.Colors.PRIMARY,
             animate=ft.Animation(250, ft.AnimationCurve.EASE_IN),
             expand=True,
-            expand_loose=True)
+            expand_loose=True
+        )
         self.pages_container: ft.Container = ft.Container(
-            content=ft.Row(
-                [
-                    ft.SegmentedButton(
-                        on_change=self.handle_change,
-                        allow_multiple_selection=False,
-                        selected_icon=ft.Icon(size=0),
-                        selected={"home"},  # выбран по умолчанию
-                        segments=[
-                            nav_segment("home", "Главная"),
-                            nav_segment("settings", "Настройки"),
-                            nav_segment("shop", "Магазин", disabled=True),
-                            nav_segment("about", "О нас"),
-                        ],
-                        height=70,
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=0),
-                            alignment=ft.alignment.center,
-                        ),
-                        expand=True,
-                    )
-                ]
-            ),
+            content=ft.Row([
+                ft.SegmentedButton(
+                    on_change=self.handle_change,
+                    allow_multiple_selection=False,
+                    selected_icon=ft.Icon(size=0),
+                    selected={"home"},
+                    segments=[
+                        nav_segment("home", "Главная"),
+                        nav_segment("settings", "Настройки"),
+                        nav_segment("shop", "Магазин", disabled=True),
+                        nav_segment("about", "О нас"),
+                    ],
+                    height=70,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=0),
+                        alignment=ft.alignment.center,
+                    ),
+                    expand=True,
+                )
+            ]),
             expand=True,
             width=float('inf'),
             height=70,
         )
         self.pages = ["home", "settings", "shop", "about"]
-        segment_width = page_width//4
-
-        self.selector_container = ft.Container(self.selector, expand=True,padding=ft.padding.only(right=segment_width*3),animate=ft.Animation(250, ft.AnimationCurve.EASE_IN))
-        self.app_bar = ft.Column(
-            [
-                self.pages_container,
-                self.selector_container
-            ]
+        segment_width = page_width / 4
+        self.selector_container = ft.Container(
+            self.selector,
+            expand=True,
+            padding=ft.padding.only(right=segment_width * 3),
+            animate=ft.Animation(250, ft.AnimationCurve.EASE_IN)
         )
-
-        #self.selector.width = (1250) / 4  # type: ignore
-        #self.page.appbar = self.app_bar  # type: ignore
+        self.app_bar = ft.Column([
+            self.pages_container,
+            self.selector_container
+        ])
+        logger.info("Appbar setup completed")
 
     def setup_auth_screen(self):
         self.screen_manager.add_screen(
             "auth",
             AuthScreen(self.screen_manager, self.api, self.try_authenticate_user),
         )
+        logger.info("Auth screen setup completed")
 
     def move_window(self, e):
         self.page.window.start_dragging()
-        
 
     def setup_screens(self):
-        # Initialize screens with navigator dependency
-        self.screen_manager.add_screen(
-            "home", HomeScreen(self.screen_manager, self.api)
-        )
+        self.screen_manager.add_screen("home", HomeScreen(self.screen_manager, self.api))
         self.screen_manager.add_screen("settings", SettingsScreen(self.screen_manager))
         self.screen_manager.add_screen("about", AboutScreen(self.screen_manager))
-    
+        logger.info("Main screens setup completed")
+
     def close(self, e):
         self.page.window.close()
-    
+        logger.info("Launcher window closed")
+
     def run_laucher(self):
+        logger.info("Running launcher UI")
         self.setup_screens()
         self.setup_appbar()
         self.page.window.frameless = True
@@ -176,29 +184,24 @@ class Launcher:
             on_vertical_drag_update=self.move_window,
             width=float('inf'),
         )
-        self.page.padding=0
-        
+        self.page.padding = 0
         self.page.add(
-            ft.Column(
-                [
-                    self.move_bar,
-                    ft.Container(
-                        ft.Column(
-                            [self.app_bar, self.screen_manager.get_main_container()],
-                            expand=True,
-                            spacing=0,
-                        ),
-                        bgcolor=ft.Colors.SURFACE,
-                        expand=True,
-                        padding=ft.padding.all(5),
-                        border_radius=ft.border_radius.vertical(0,15),
-                        height=self.page.height
-                    ),
-                ],
-                spacing=0
-            )
+            ft.Column([
+                self.move_bar,
+                ft.Container(
+                    ft.Column([self.app_bar, self.screen_manager.get_main_container()], expand=True, spacing=0),
+                    bgcolor=ft.Colors.SURFACE,
+                    expand=True,
+                    padding=ft.padding.all(5),
+                    border_radius=ft.border_radius.vertical(0, 15),
+                    height=self.page.height,
+                    
+                ),
+            ], spacing=0)
         )
+        logger.success("Launcher UI initialized and running")
 
     def run(self):
+        logger.info("Launcher run started")
         self.setup_auth_screen()
         self.try_authenticate_user()

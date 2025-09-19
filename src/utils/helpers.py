@@ -3,14 +3,16 @@ import subprocess
 import platform
 import sys
 import os
+from loguru import logger
 
 def find_by_key(items, key, value) -> dict[str, str]|None:
     return next((item for item in items if item.get(key) == value), None) 
 
 def get_uuid_file(id) -> str:
     namespace = uuid.NAMESPACE_DNS
-    return str(uuid.uuid5(namespace, str(id)))
-
+    uuids = str(uuid.uuid5(namespace, str(id)))
+    logger.debug(f"Getting uuid 4 {id} => {uuids}")
+    return uuids
 
 def human_readable_size(num_bytes: int, decimal_places: int = 2) -> str:
     """
@@ -32,6 +34,7 @@ def human_readable_size(num_bytes: int, decimal_places: int = 2) -> str:
 
 
 def open_folder(path):
+    
     if platform.system() == "Windows":
         subprocess.Popen(["explorer", path])
     elif platform.system() == "Darwin":  # macOS
@@ -46,4 +49,5 @@ def get_folder():
     else:
         # we are running in a normal Python environment
         bundle_dir = os.path.abspath(".")
+    logger.info(f"Bundel folder: {bundle_dir}")
     return bundle_dir

@@ -1,6 +1,7 @@
 from .screen import Screen
 import flet as ft
 from utils import API, get_hwid
+from loguru import logger
 
 
 class AuthScreen(Screen):
@@ -8,6 +9,7 @@ class AuthScreen(Screen):
         self.navigator = navigator
         self.api: API = api
         self.on_succes_auth = on_succes_auth
+        logger.info("AuthScreen initialized")
 
     def on_resize(self, e) -> None:
         self.auth_container.height = self.navigator.page.height
@@ -15,23 +17,24 @@ class AuthScreen(Screen):
         self.login_field.width = self.navigator.page.width // 4
         self.password_field.width = self.navigator.page.width // 4
         self.navigator.page.update()
+        logger.debug(f"AuthScreen resized: width={self.navigator.page.width}, height={self.navigator.page.height}")
 
     def auth(self, e):
-
-        if (
-            self.api.get_token(
-                self.login_field.value, self.password_field.value, get_hwid() #type: ignore
-            )
-            == 200
-        ):
+        logger.info(f"Attempting authentication for user '{self.login_field.value}'")
+        status_code = self.api.get_token(
+            self.login_field.value, self.password_field.value, get_hwid()  # type: ignore
+        )
+        if status_code == 200:
             self.navigator.page.client_storage.set('lsslaucher.token', self.api.token)
+            logger.success("Authentication successful")
             self.on_succes_auth()
         else:
+            logger.warning("Authentication failed: invalid login or password")
             self.login_field.border_color = ft.Colors.RED
             self.password_field.border_color = ft.Colors.RED
             self.login_field.value = ''
             self.password_field.value = ''
-            self.error_text.value = 'Неверный логин или пароль'
+            self.error_text.value = 'Неверный логин или пароль, или hwid'
             self.navigator.page.update()
 
     def build(self) -> ft.Container:
@@ -39,8 +42,10 @@ class AuthScreen(Screen):
             hint_text='Login', width=self.navigator.page.width // 4
         )
         self.password_field: ft.TextField = ft.TextField(
-            hint_text='Password', width=self.navigator.page.width // 4,
-            password=True,can_reveal_password=True
+            hint_text='Password',
+            width=self.navigator.page.width // 4,
+            password=True,
+            can_reveal_password=True
         )
         self.error_text = ft.Text()
         self.auth_container = ft.Container(
@@ -55,7 +60,12 @@ class AuthScreen(Screen):
                     self.login_field,
                     self.password_field,
                     self.error_text,
-                    ft.ElevatedButton("Login", on_click=self.auth, width=self.navigator.page.width / 6, height=40),
+                    ft.ElevatedButton(
+                        "Login",
+                        on_click=self.auth,
+                        width=self.navigator.page.width / 6,
+                        height=40
+                    ),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -64,4 +74,5 @@ class AuthScreen(Screen):
             height=self.navigator.page.height,
             width=self.navigator.page.width,
         )
+        logger.info("AuthScreen built")
         return self.auth_container
