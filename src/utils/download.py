@@ -69,7 +69,7 @@ async def download_file_fast(url: str, filename: str, part_size: int = 1024*1024
         for future in asyncio.as_completed(tasks):
             downloaded = await future
             done += downloaded
-            logger.info(f"Create temdir downloaded {downloaded}")
+            logger.info(f"Total downloaded {downloaded} B")
             yield done/file_size*100
 
         # склеиваем файл
@@ -81,7 +81,8 @@ async def download_file_fast(url: str, filename: str, part_size: int = 1024*1024
                 logger.info(f"Joined part {os.path.basename(part_file)}")
                 os.remove(part_file)
                 logger.info(f"Removed part {os.path.basename(part_file)}")
-
+        os.remove(temp_dir)
+        logger.info("Removed tempdir")
         yield 100.0  # финальный прогресс
                 
 def download(url: str, filename: str) -> Iterator[float]:
