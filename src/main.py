@@ -28,6 +28,5 @@ def main(page: ft.Page):
     app.run()
 
 if __name__ == '__main__':
-    
     (Path(get_folder())/"packs").mkdir(exist_ok=True,parents=True)
     ft.app(target=main, assets_dir='assets')

@@ -10,7 +10,7 @@ from utils.helpers import get_folder
 from loguru import logger
 
 APP_DATA_PATH = str(Path(get_folder()) / "packs")
-URL = 'https://lsslaucher.ru'
+URL = 'https://lsslauncher.xyz'
 
 
 class API:
