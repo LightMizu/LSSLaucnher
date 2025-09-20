@@ -81,13 +81,12 @@ async def download_file_fast(url: str, filename: str, part_size: int = 1024*1024
                 logger.info(f"Joined part {os.path.basename(part_file)}")
                 os.remove(part_file)
                 logger.info(f"Removed part {os.path.basename(part_file)}")
-        os.remove(temp_dir)
         logger.info("Removed tempdir")
         yield 100.0  # финальный прогресс
                 
 def download(url: str, filename: str) -> Iterator[float]:
     """
-    Синхронный генератор, использующий асинхронную download_file_fast.
+    Синхронный генератор, использующий асинхронную download_file_fast
     """
     async def run():
         async for progress in download_file_fast(url, filename):

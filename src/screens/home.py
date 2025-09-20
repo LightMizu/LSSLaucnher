@@ -246,7 +246,7 @@ class HomeScreen(Screen):
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()
-        logger.debug(f"HomeScreen resized: width={self.navigator.page.width}")
+        logger.debug(f"HomeScreen resized: width={self.navigator.page.width} height={self.navigator.page.height}")
 
     def select_pack(self, id_pack: int, button: ft.IconButton):
         card = next(c for c in self.list_files if c.select_button == button)
