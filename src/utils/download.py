@@ -1,23 +1,30 @@
 import aiohttp
+from aiohttp import ClientPayloadError
 import asyncio 
 from typing import Iterator, AsyncGenerator
 import os
 from loguru import logger
 from tempfile import mkdtemp
 
-async def fetch_chunk(session, url, start, end, part_file, progress_queue):
-    logger.info(f"Start fetching {url} from {start} to {end} part file {part_file}")
+async def fetch_chunk(session, url, start, end, part_file, retry:int=5):
+    logger.info(f"Start fetching {url} from {start} to {end} part file {part_file} retry count {retry}")
     headers = {"Range": f"bytes={start}-{end}"}
-    async with session.get(url, headers=headers) as resp:
-        resp.raise_for_status()
-        dowloaded = 0
-        with open(part_file, "wb") as f:
-            while True:
-                chunk = await resp.content.read(1024*256)  # 1 MB
-                if not chunk:
-                    break
-                f.write(chunk)
-                dowloaded += len(chunk)
+    if retry == 0:
+        return 0
+    try:
+        async with session.get(url, headers=headers) as resp:
+            resp.raise_for_status()
+            dowloaded = 0
+            with open(part_file, "wb") as f:
+                while True:
+                    chunk = await resp.content.read(1024*256)  # 1 MB
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    dowloaded += len(chunk)
+    except ClientPayloadError:
+        logger.warning("ClientPayloadError retrying...")
+        return await fetch_chunk(session, url, start, end, part_file, retry-1)
     return dowloaded  # сообщаем о прогрессе
 
 async def download_file_fast(url: str, filename: str, part_size: int = 1024*1024*10) -> AsyncGenerator[float, None]:
@@ -50,7 +57,6 @@ async def download_file_fast(url: str, filename: str, part_size: int = 1024*1024
             logger.info(f"Part {len(ranges)+1}: {start}-{end}")
             ranges.append((start, end))
         # очередь для прогресса
-        progress_queue = asyncio.Queue()
         part_files = []
         tasks = []
         logger.info("Creating tempdir")
@@ -60,7 +66,7 @@ async def download_file_fast(url: str, filename: str, part_size: int = 1024*1024
         for i, (start, end) in enumerate(ranges):
             part_file = os.path.join(temp_dir,f"{basename}.part{i}")
             part_files.append(part_file)
-            tasks.append(fetch_chunk(session, url, start, end, part_file, progress_queue))
+            tasks.append(fetch_chunk(session, url, start, end, part_file))
 
         
         # запускаем скачивание

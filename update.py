@@ -110,8 +110,8 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 APP_NAME = "lsslauncher.exe"  # имя основного exe
-UPDATE_URL = "https://lsslaucher.ru/build"         # ссылка на exe
-HASH_URL = "https://lsslaucher.ru/sha256"    # ссылка на sha256
+UPDATE_URL = "https://lsslauncher.xyz/build"         # ссылка на exe
+HASH_URL = "https://lsslauncher.xyz/sha256"    # ссылка на sha256
 
 
 

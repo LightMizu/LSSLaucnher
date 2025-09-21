@@ -45,7 +45,7 @@ def open_folder(path):
 def get_folder():
     if getattr(sys, 'frozen', False):
         # we are running in a bundle
-        bundle_dir = sys._MEIPASS # type: ignore
+        bundle_dir = os.path.dirname(sys.executable)
     else:
         # we are running in a normal Python environment
         bundle_dir = os.path.abspath(".")

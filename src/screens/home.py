@@ -341,7 +341,7 @@ class HomeScreen(Screen):
             )
             return
         patch_dota(path)
-        self.open_status_dialog("Успех", "ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED)
+        self.open_status_dialog("Успех", "Ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED)
         logger.success("VAC fixed")
 
     def install_custom(self, e):

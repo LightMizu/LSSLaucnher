@@ -4,6 +4,7 @@ import zlib
 from pathlib import Path
 import psutil
 from loguru import logger
+import requests
 
 DOTA_MOD_FOLDER = "DotaLSS"
 
@@ -26,9 +27,10 @@ def calculate_hashes(file_path: Path):
             sha1.update(chunk)
             crc32 = zlib.crc32(chunk, crc32)
     sha1_hex = sha1.hexdigest().upper()
-    crc_hex = format(crc32 & 0xFFFFFFFF, '08X')
-    logger.info(f"Calculated hashes - SHA1: {sha1_hex}, CRC32: {crc_hex}")
-    return sha1_hex, crc_hex
+    crc32 &= 0xFFFFFFFF
+    little_endian_bytes = crc32.to_bytes(4, byteorder='little').hex().upper()
+    logger.info(f"Calculated hashes - SHA1: {sha1_hex}, CRC32:{little_endian_bytes}")
+    return sha1_hex, little_endian_bytes
 
 
 def validate_patch_state(gameinfo_path: Path, dota_signatures_path: Path):
@@ -38,7 +40,7 @@ def validate_patch_state(gameinfo_path: Path, dota_signatures_path: Path):
 
     with open(gameinfo_path, 'r', encoding='utf-8', errors='ignore') as f:
         contents = f.read()
-        if "// Patched by" in contents:
+        if "// Patched by LSSLauncher" in contents:
             gameinfo_patched = True
             logger.info("gameinfo is already patched")
 
@@ -122,6 +124,51 @@ def modify_dota_signatures(dota_signatures_path: Path, sha1: str, crc32: str):
         f.write("\n" + patch)
     logger.info("dota.signatures updated successfully")
 
+def get_default_gi(output_file):
+    logger.info("Get default gi file")
+    try:
+        response = requests.get("https://raw.githubusercontent.com/SteamDatabase/GameTracking-Dota2/refs/heads/master/game/dota/gameinfo_branchspecific.gi")
+        response.raise_for_status()  # проверка на ошибки HTTP
+
+        with open(output_file, "wb") as f:
+            f.write(response.content)
+
+        logger.success("Gi file is default")
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"While dowload gi file exception {e}")
+
+def reset_sign(file_path):
+    """
+    Открывает файл и удаляет все строки начиная с той, где первые символы 'DIGEST'.
+    Изменяет файл на месте.
+    
+    :param file_path: путь к редактируемому файлу
+    """
+    logger.info("Reseting signature file")
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        # Находим индекс строки, которая начинается с "DIGEST"
+        digest_index = None
+        for i, line in enumerate(lines):
+            if line.startswith("DIGEST"):
+                digest_index = i
+                break
+
+        if digest_index is not None:
+            # Оставляем только строки до этой строки
+            lines = lines[:digest_index + 1]
+
+        # Перезаписываем файл
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        logger.success("Signatures file reset")
+
+    except Exception as e:
+        logger.error(f"While reseting signatures file except {e}")
+
 
 def patch_dota(dota_path: str):
     if is_dota2_running():
@@ -131,16 +178,16 @@ def patch_dota(dota_path: str):
     gameinfo_path = game_path / "game/dota/gameinfo_branchspecific.gi"
     dota_signatures_path = game_path / "game/bin/win64/dota.signatures"
     mod_dir_path = game_path / f"game/{DOTA_MOD_FOLDER}"
-
+    
+    reset_sign(dota_signatures_path)
     gameinfo_patched, dota_signatures_patched = validate_patch_state(gameinfo_path, dota_signatures_path)
 
     if not gameinfo_patched:
+        get_default_gi(gameinfo_path)
         backup_file(gameinfo_path, ".gi_backup")
         modify_gameinfo(gameinfo_path)
-    if not dota_signatures_patched:
-        backup_file(dota_signatures_path, ".signatures_backup")
-        sha1, crc32 = calculate_hashes(gameinfo_path)
-        modify_dota_signatures(dota_signatures_path, sha1, crc32)
+    sha1, crc32 = calculate_hashes(gameinfo_path)
+    modify_dota_signatures(dota_signatures_path, sha1, crc32)
 
     if not mod_dir_path.exists():
         mod_dir_path.mkdir(parents=True, exist_ok=True)
