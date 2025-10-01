@@ -10,9 +10,9 @@ def get_hwid(salt: str = '') -> str:
 
     # На Windows можно добавить VolSer или DiskSerial
     if platform.system() == "Windows":
+        import wmi
         try:
-            output = subprocess.check_output("wmic csproduct get UUID", shell=True)
-            uuid_str = output.decode().split("\n")[1].strip()
+            uuid_str = wmi.WMI().Win32_ComputerSystemProduct()[0].UUID
         except:
             pass
     else:
