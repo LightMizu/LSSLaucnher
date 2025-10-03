@@ -153,7 +153,12 @@ class Launcher:
     def close(self, e):
         self.page.window.close()
         logger.info("Launcher window closed")
-
+        
+    def minimize(self, e):
+        self.page.window.minimized = not self.page.window.minimized
+        logger.info(f"Launcher window minimized {self.page.window.minimized}")
+        self.page.update()
+    
     def run_laucher(self):
         logger.info("Running launcher UI")
         self.setup_screens()
@@ -169,7 +174,11 @@ class Launcher:
                 ft.Stack(
                     [
                         ft.Container(
-                            ft.IconButton(ft.Icons.CLOSE_ROUNDED,icon_size=15, width=30,height=30,on_click=self.close),
+                            ft.Row(
+                                    [ft.IconButton(ft.Icons.MINIMIZE_ROUNDED,icon_size=15, width=30,height=30,on_click=self.minimize),
+                                    ft.IconButton(ft.Icons.CLOSE_ROUNDED,icon_size=15, width=30,height=30,on_click=self.close),
+                                    ],alignment=ft.MainAxisAlignment.END,
+                                ),
                             alignment=ft.alignment.top_right,
                         ),
                     ],
