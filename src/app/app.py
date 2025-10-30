@@ -75,9 +75,9 @@ class Launcher:
         assert self.page.width
         value = e.data[2:-2]
         page_width = self.page.width
-        segment_width = page_width / 4
+        segment_width = page_width / 5
         self.selector_container.padding = ft.padding.only(
-            right=segment_width * (3 - self.pages.index(value)),
+            right=segment_width * (4 - self.pages.index(value)),
             left=segment_width * self.pages.index(value)
         )
         self.page.update()
@@ -106,6 +106,7 @@ class Launcher:
                         nav_segment("home", "Главная"),
                         nav_segment("settings", "Настройки"),
                         nav_segment("shop", "Магазин", disabled=True),
+                        nav_segment("merge", "Совмещение", disabled=True),
                         nav_segment("about", "О нас"),
                     ],
                     height=70,
@@ -120,12 +121,12 @@ class Launcher:
             width=float('inf'),
             height=70,
         )
-        self.pages = ["home", "settings", "shop", "about"]
-        segment_width = page_width / 4
+        self.pages = ["home", "settings", "shop","merge", "about"]
+        segment_width = page_width / 5
         self.selector_container = ft.Container(
             self.selector,
             expand=True,
-            padding=ft.padding.only(right=segment_width * 3),
+            padding=ft.padding.only(right=segment_width * 4),
             animate=ft.Animation(250, ft.AnimationCurve.EASE_IN)
         )
         self.app_bar = ft.Column([
@@ -148,6 +149,7 @@ class Launcher:
         self.screen_manager.add_screen("home", HomeScreen(self.screen_manager, self.api))
         self.screen_manager.add_screen("settings", SettingsScreen(self.screen_manager))
         self.screen_manager.add_screen("about", AboutScreen(self.screen_manager))
+
         logger.info("Main screens setup completed")
 
     def close(self, e):
