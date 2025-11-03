@@ -66,6 +66,7 @@ class PackCard(ft.Container):
                                 if file["id"] in favorites
                                 else ft.Icons.STAR_BORDER_ROUNDED
                             ),
+                            icon_size=30,
                             on_click=self.add_to_favorites,
                         ),
                         self.select_button,
@@ -90,15 +91,15 @@ FAVORITES_KEY = "lsslaucher.favorites"
 class PackList(ft.ListView):
     """
     Отображает список паков с кнопками выбора.
-    - files: итерируемый набор словарей с ключом "id"
-    - on_select: коллбек вида (pack_id: str, button: ft.IconButton) -> None
+    - files: итерируемый набор словарей с ключом "id" (числовой)
+    - on_select: коллбек вида (pack_id: int, button: ft.IconButton) -> None
     - page: экземпляр ft.Page (нужен для client_storage)
     """
 
     def __init__(
         self,
         files: Iterable[dict[str, Any]],
-        on_select: Callable[[str, ft.IconButton], None],
+        on_select: Callable[[int, ft.IconButton], None],
         page: ft.Page,
     ) -> None:
         self.page: ft.Page = page
@@ -107,28 +108,34 @@ class PackList(ft.ListView):
 
         logger.info("Init PackList")
 
-        # Кэшируем избранное и предрасчитываем позиции для сортировки
-        self._favorite_ids: list[str] = self._read_favorites()
-        self._fav_positions: dict[str, int] = {
+        # Кэшируем избранное и позиции
+        self._favorite_ids: list[int] = self._read_favorites()
+        self._fav_positions: dict[int, int] = {
             pack_id: idx for idx, pack_id in enumerate(self._favorite_ids)
         }
 
-        # Строим контролы один раз
-        controls = self._build_controls()
+        # ---------- Постоянные структуры (создаём ОДИН раз) ----------
+        # Карточки и их контейнеры, индексируем по pack_id
+        self.cards: dict[int, ft.Control] = {}
+        self._containers_by_id: dict[int, ft.Container] = {}
+        self._ensure_cards_built_once()
+
+        # Начальные контролы — только упорядочиваем контейнеры
+        controls = self._ordered_containers()
 
         super().__init__(
             controls=controls,
             height=float("inf"),
             spacing=10,
-            # scroll=ft.ScrollMode.ADAPTIVE,  # включите при необходимости
+            # scroll=ft.ScrollMode.ADAPTIVE,
         )
 
     # ---------- Публичные методы ----------
 
     def before_update(self) -> None:
         """
-        Вызывается фреймворком перед прорисовкой: перечитываем избранное,
-        пересортировываем и перестраиваем контролы без дублирования кода.
+        Перечитываем избранное, пересортировываем контейнеры.
+        Карточки НЕ пересоздаются.
         """
         self._favorite_ids = self._read_favorites()
         self._fav_positions = {
@@ -138,12 +145,13 @@ class PackList(ft.ListView):
         logger.info("Updating PackList")
         logger.debug(f"Favorites: {self._favorite_ids}")
 
-        self.controls = self._build_controls()
+        # Просто переупорядочиваем ссылки на СУЩЕСТВУЮЩИЕ контейнеры
+        self.controls = self._ordered_containers()
         super().before_update()
 
     # ---------- Внутренние вспомогательные ----------
 
-    def _read_favorites(self) -> list[str]:
+    def _read_favorites(self) -> list[int]:
         """Безопасно читаем список избранного из client_storage."""
         if self.page.client_storage.contains_key(FAVORITES_KEY):
             fav = self.page.client_storage.get(FAVORITES_KEY)
@@ -157,20 +165,16 @@ class PackList(ft.ListView):
         Возвращает файлы, отсортированные так, чтобы избранные были первыми,
         сохраняя их порядок из избранного.
         """
-        def sort_key(item: dict[str, Any]) -> tuple[int, str]:
-            pack_id = int(item.get("id", ""))
-            # сначала по позиции в favorites (или бесконечность),
-            # затем по id — стабильная сортировка для остальных
-            pos = self._fav_positions.get(pack_id, float("inf"))
+        def sort_key(item: dict[str, Any]) -> tuple[int, int]:
+            pack_id = int(item.get("id", 0))
+            pos = self._fav_positions.get(pack_id, 10**9)  # «бесконечность»
             return (pos, pack_id)
 
         return sorted(self.files, key=sort_key)
 
-    def _make_select_button(
-        self, pack_id: str
-    ) -> ft.IconButton:
+    def _make_select_button(self, pack_id: int) -> ft.IconButton:
         """Создаёт кнопку выбора и вешает обработчик."""
-        btn = ft.IconButton(ft.Icons.CIRCLE_OUTLINED)
+        btn = ft.IconButton(ft.Icons.CIRCLE_OUTLINED, icon_size=25)
 
         def _on_click(_):
             self.on_select(pack_id, btn)
@@ -178,27 +182,120 @@ class PackList(ft.ListView):
         btn.on_click = _on_click
         return btn
 
-    def _build_controls(self) -> list[ft.Control]:
-        """Строит и возвращает список контролов для ListView."""
-        ordered = self._ordered_files()
-        logger.debug(f"Ordered {len(ordered)} files", )
+    def _build_card(self, file: dict[str, Any]) -> tuple[int, ft.Control, ft.Container]:
+        """
+        Создаёт PackCard и оборачивающий контейнер для pack_id.
+        Возвращает (pack_id, card, container).
+        """
+        pack_id = int(file.get("id", 0))
+        select_button = self._make_select_button(pack_id)
 
-        cards: list[ft.Control] = []
-        for file in ordered:
-            pack_id = int(file.get("id", ""))
-            select_button = self._make_select_button(pack_id)
-            # PackCard предполагается внешним классом
-            card = PackCard(file, select_button, self._favorite_ids)
-            cards.append(ft.Container(card, padding=ft.padding.only(right=15)))
-        return cards
+        # PackCard — ваш внешний класс, который принимает (file, button, favorite_ids)
+        card = PackCard(file, select_button, self._favorite_ids)
+
+        container = ft.Container(card, padding=ft.padding.only(right=15))
+        return pack_id, card, container
+
+    def _ensure_cards_built_once(self) -> None:
+        """
+        Создаём карточки и контейнеры ТОЛЬКО для тех id, которых ещё нет.
+        Вызывается из __init__, но можно безопасно звать и позже (при добавлении файлов).
+        """
+        for file in self.files:
+            pack_id = int(file.get("id", 0))
+            if pack_id not in self.cards:
+                pid, card, container = self._build_card(file)
+                self.cards[pid] = card
+                self._containers_by_id[pid] = container
+
+    def _ordered_containers(self) -> list[ft.Control]:
+        """
+        Возвращает список контейнеров в правильном порядке.
+        Карточки не пересоздаются: мы берём уже существующие контейнеры.
+        """
+        ordered = self._ordered_files()
+        logger.debug(f"Ordered {len(ordered)} files")
+
+        # На случай, если появились новые файлы (опционально)
+        self._ensure_cards_built_once()
+
+        result: list[ft.Control] = []
+        for f in ordered:
+            pack_id = int(f.get("id", 0))
+            container = self._containers_by_id.get(pack_id)
+            if container is not None:
+                result.append(container)
+            else:
+                # Страховка: если почему-то контейнера нет — создадим
+                pid, card, container = self._build_card(f)
+                self.cards[pid] = card
+                self._containers_by_id[pid] = container
+                result.append(container)
+        return result
 
 class HomeScreen(Screen):
-    def update_files(self):
-        
+    def __init__(self, navigator, api: API):
+        self.navigator = navigator
+        self.api: API = api
+        self.selected_pack = -1
+        status_code, self.files = api.get_files(0, 100)
+        self.list_files = []
+        self.install_custom_pack_button = ft.Button(
+            "+Свой пак",
+            expand=True,
+            on_click=lambda x: self.navigator.page.open(
+                self.install_custom_pack_dialog
+            ),
+        )
+        logger.info(f"APP_DATA_PATH: {APP_DATA_PATH}")
+        self.install_custom_pack_dialog = ft.AlertDialog(
+            modal=True,
+            title="Установка своего пака",
+            content=ft.Text(
+                "Для установки пака нужно переместить vpk в папку лаунчера"
+            ),
+            actions=[
+                ft.TextButton(
+                    "Отмена",
+                    on_click=lambda x: self.navigator.page.close(
+                        self.install_custom_pack_dialog
+                    ),
+                ),
+                ft.TextButton(
+                    "Открыть папку", on_click=lambda x: open_folder(APP_DATA_PATH)
+                ),
+                ft.TextButton(
+                    "Выбрать vpk",
+                    on_click=self.get_custom_vpk,
+                ),
+            ],
+        )
+        self.custom_vpk_list = ft.RadioGroup(
+            content=ft.Column(
+                controls=[],
+                height=self.navigator.page.height / 4,
+                scroll=ft.ScrollMode.ADAPTIVE,
+            )
+        )
+        self.select_custom_pack_dialog = ft.AlertDialog(
+            modal=True,
+            title="Выбор своего пака",
+            content=self.custom_vpk_list,
+            actions=[
+                ft.TextButton(
+                    "Отмена",
+                    on_click=lambda x: self.navigator.page.close(
+                        self.select_custom_pack_dialog
+                    ),
+                ),
+                ft.TextButton("Установить", on_click=self.install_custom),
+            ],
+        )
+        self.pack_list = PackList(self.files, self.select_pack, self.navigator.page)
         self.packs_column = ft.SafeArea(
             ft.Stack(
                 [
-                    PackList(self.files, self.select_pack, self.navigator.page),
+                    self.pack_list,
                     ft.Container(self.install_custom_pack_button, height=30, width=100),
                 ],
                 alignment=ft.alignment.bottom_left,
@@ -265,67 +362,6 @@ class HomeScreen(Screen):
             ),
             alignment=ft.alignment.center,
         )
-        self.navigator.page.update()
-
-    def __init__(self, navigator, api: API):
-        self.navigator = navigator
-        self.api: API = api
-        self.selected_pack = -1
-        status_code, self.files = api.get_files(0, 100)
-        self.list_files = []
-        self.install_custom_pack_button = ft.Button(
-            "+Свой пак",
-            expand=True,
-            on_click=lambda x: self.navigator.page.open(
-                self.install_custom_pack_dialog
-            ),
-        )
-        logger.info(f"APP_DATA_PATH: {APP_DATA_PATH}")
-        self.install_custom_pack_dialog = ft.AlertDialog(
-            modal=True,
-            title="Установка своего пака",
-            content=ft.Text(
-                "Для установки пака нужно переместить vpk в папку лаунчера"
-            ),
-            actions=[
-                ft.TextButton(
-                    "Отмена",
-                    on_click=lambda x: self.navigator.page.close(
-                        self.install_custom_pack_dialog
-                    ),
-                ),
-                ft.TextButton(
-                    "Открыть папку", on_click=lambda x: open_folder(APP_DATA_PATH)
-                ),
-                ft.TextButton(
-                    "Выбрать vpk",
-                    on_click=self.get_custom_vpk,
-                ),
-            ],
-        )
-        self.custom_vpk_list = ft.RadioGroup(
-            content=ft.Column(
-                controls=[],
-                height=self.navigator.page.height / 4,
-                scroll=ft.ScrollMode.ADAPTIVE,
-            )
-        )
-        self.select_custom_pack_dialog = ft.AlertDialog(
-            modal=True,
-            title="Выбор своего пака",
-            content=self.custom_vpk_list,
-            actions=[
-                ft.TextButton(
-                    "Отмена",
-                    on_click=lambda x: self.navigator.page.close(
-                        self.select_custom_pack_dialog
-                    ),
-                ),
-                ft.TextButton("Установить", on_click=self.install_custom),
-            ],
-        )
-
-        self.update_files()
 
         self.status_text = ft.Text(size=30)
         self.error_text = ft.Text(size=25)
@@ -349,7 +385,6 @@ class HomeScreen(Screen):
         logger.info("HomeScreen initialized with packs loaded")
 
     def build(self) -> ft.Container:
-        self.update_files()
         return self.main_container
 
     def get_custom_vpk(self, e):
@@ -378,7 +413,7 @@ class HomeScreen(Screen):
         )
 
     def select_pack(self, id_pack: int, button: ft.IconButton):
-        card = next(c for c in self.list_files if c.select_button == button)
+        card = self.pack_list.cards[id_pack]
         card.progress_ring.value = None
         card.progress_ring.visible = True
         card.select_button.visible = False
