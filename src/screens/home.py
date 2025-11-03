@@ -1,4 +1,5 @@
 import flet as ft
+
 from utils.api import API
 from utils.helpers import find_by_key, get_uuid_file, human_readable_size, open_folder
 from utils.install_pack import (
@@ -11,12 +12,32 @@ from utils.install_pack import (
 from .screen import Screen
 import os
 from loguru import logger
+from typing import List
 
 
 class PackCard(ft.Container):
-    def __init__(self, file: dict, select_button: ft.Control):
+    def add_to_favorites(self, e):
+        favorite = []
+
+        if e.page.client_storage.contains_key("lsslaucher.favorites"):
+            favorite = e.page.client_storage.get("lsslaucher.favorites")
+        if self.id_file in favorite:
+            favorite.remove(self.id_file)
+            e.control.icon = ft.Icons.STAR_BORDER_ROUNDED
+        else:
+            favorite.append(self.id_file)
+            e.control.icon = ft.Icons.STAR_ROUNDED
+        e.page.client_storage.set("lsslaucher.favorites", favorite)
+        self.update_list()
+        e.page.update()
+
+    def __init__(
+        self, file: dict, select_button: ft.Control, favorites: List[int], update_list
+    ):
         self.select_button = select_button
         self.progress_ring = ft.ProgressRing(width=20, height=20, visible=False)
+        self.id_file = file["id"]
+        self.update_list = update_list
         super().__init__(
             content=ft.SafeArea(
                 ft.Row(
@@ -37,6 +58,14 @@ class PackCard(ft.Container):
                             color=ft.Colors.SECONDARY,
                             width=100,
                         ),
+                        ft.IconButton(
+                            icon=(
+                                ft.Icons.STAR_ROUNDED
+                                if file["id"] in favorites
+                                else ft.Icons.STAR_BORDER_ROUNDED
+                            ),
+                            on_click=self.add_to_favorites,
+                        ),
                         self.select_button,
                         self.progress_ring,
                     ],
@@ -53,87 +82,47 @@ class PackCard(ft.Container):
 
 
 class HomeScreen(Screen):
-    def __init__(self, navigator, api: API):
-        self.navigator = navigator
-        self.api: API = api
-        self.selected_pack = -1
-        status_code, self.files = api.get_files(0, 100)
+    def before_update(self):
+        logger.debug("Calling before update")
+    def update_files(self):
+        logger.info("Updating file list")
+        favorite = []
         self.list_files = []
-        self.install_custom_pack_button = ft.Button(
-            "+Свой пак",
-            expand=True,
-            on_click=lambda x: self.navigator.page.open(self.install_custom_pack_dialog),
+        if self.navigator.page.client_storage.contains_key("lsslaucher.favorites"):
+            favorite = self.navigator.page.client_storage.get("lsslaucher.favorites")
+        file_ordered = sorted(
+            self.files,
+            key=lambda x: favorite.index(x["id"])
+            if x["id"] in favorite
+            else float("inf"),
         )
-        logger.info(f"APP_DATA_PATH: {APP_DATA_PATH}")
-        self.install_custom_pack_dialog = ft.AlertDialog(
-            modal=True,
-            title="Установка своего пака",
-            content=ft.Text(
-                "Для установки пака нужно переместить vpk в папку лаунчера"
-            ),
-            actions=[
-                ft.TextButton(
-                    "Отмена",
-                    on_click=lambda x: self.navigator.page.close(
-                        self.install_custom_pack_dialog
-                    ),
-                ),
-                ft.TextButton(
-                    "Открыть папку", on_click=lambda x: open_folder(APP_DATA_PATH)
-                ),
-                ft.TextButton(
-                    "Выбрать vpk",
-                    on_click=self.get_custom_vpk,
-                ),
-            ],
-        )
-        self.custom_vpk_list = ft.RadioGroup(
-            content=ft.Column(
-                controls=[],
-                height=self.navigator.page.height/4,
-                scroll=ft.ScrollMode.ADAPTIVE
-            )
-        )
-        self.select_custom_pack_dialog = ft.AlertDialog(
-            modal=True,
-            title="Выбор своего пака",
-            content=self.custom_vpk_list,
-            actions=[
-                ft.TextButton(
-                    "Отмена",
-                    on_click=lambda x: self.navigator.page.close(
-                        self.select_custom_pack_dialog
-                    ),
-                ),
-                ft.TextButton("Установить", on_click=self.install_custom),
-            ],
-        )
-
-        for file in self.files:
+        for file in file_ordered:
             select_button = ft.IconButton(ft.Icons.CIRCLE_OUTLINED)
 
             def on_click_factory(f=file, btn=select_button):
                 def on_click(e):
                     self.select_pack(f["id"], btn)
+
                 return on_click
 
             select_button.on_click = on_click_factory()
-            self.list_files.append(PackCard(file, select_button))
-        
+            self.list_files.append(
+                PackCard(file, select_button, favorite, self.update_files)
+            )
+        self.column_file = list(
+            map(
+                lambda x: ft.Container(x, padding=ft.padding.only(right=15)),
+                self.list_files,
+            )
+        )
         self.packs_column = ft.SafeArea(
             ft.Stack(
                 [
-                    ft.Column(
-                        list(
-                            map(
-                                lambda x: ft.Container(
-                                    x, padding=ft.padding.only(right=15)
-                                ),
-                                self.list_files,
-                            )
-                        ),
+                    ft.ListView(
+                        self.column_file,
                         height=float("inf"),
-                        scroll=ft.ScrollMode.ADAPTIVE,
+                        #scroll=ft.ScrollMode.ADAPTIVE,
+                        divider_thickness=10
                     ),
                     ft.Container(self.install_custom_pack_button, height=30, width=100),
                 ],
@@ -141,25 +130,6 @@ class HomeScreen(Screen):
                 expand=True,
             ),
             expand=True,
-        )
-
-        self.status_text = ft.Text(size=30)
-        self.error_text = ft.Text(size=25)
-        self.status_icon = ft.Icon(size=50)
-        self.status_dialog = ft.AlertDialog(
-            title=ft.Row(
-                [
-                    self.status_icon,
-                    self.status_text,
-                ],
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            content=self.error_text,
-            alignment=ft.alignment.center,
-            title_padding=ft.padding.all(20),
-            content_padding=ft.padding.all(50),
-            on_dismiss=self.on_dismiss,
         )
         self.main_container = ft.Container(
             content=ft.Row(
@@ -220,9 +190,93 @@ class HomeScreen(Screen):
             ),
             alignment=ft.alignment.center,
         )
+        self.navigator.page.update()
+
+    def __init__(self, navigator, api: API):
+        self.navigator = navigator
+        self.api: API = api
+        self.selected_pack = -1
+        status_code, self.files = api.get_files(0, 100)
+        self.list_files = []
+        self.install_custom_pack_button = ft.Button(
+            "+Свой пак",
+            expand=True,
+            on_click=lambda x: self.navigator.page.open(
+                self.install_custom_pack_dialog
+            ),
+        )
+        logger.info(f"APP_DATA_PATH: {APP_DATA_PATH}")
+        self.install_custom_pack_dialog = ft.AlertDialog(
+            modal=True,
+            title="Установка своего пака",
+            content=ft.Text(
+                "Для установки пака нужно переместить vpk в папку лаунчера"
+            ),
+            actions=[
+                ft.TextButton(
+                    "Отмена",
+                    on_click=lambda x: self.navigator.page.close(
+                        self.install_custom_pack_dialog
+                    ),
+                ),
+                ft.TextButton(
+                    "Открыть папку", on_click=lambda x: open_folder(APP_DATA_PATH)
+                ),
+                ft.TextButton(
+                    "Выбрать vpk",
+                    on_click=self.get_custom_vpk,
+                ),
+            ],
+        )
+        self.custom_vpk_list = ft.RadioGroup(
+            content=ft.Column(
+                controls=[],
+                height=self.navigator.page.height / 4,
+                scroll=ft.ScrollMode.ADAPTIVE,
+            )
+        )
+        self.select_custom_pack_dialog = ft.AlertDialog(
+            modal=True,
+            title="Выбор своего пака",
+            content=self.custom_vpk_list,
+            actions=[
+                ft.TextButton(
+                    "Отмена",
+                    on_click=lambda x: self.navigator.page.close(
+                        self.select_custom_pack_dialog
+                    ),
+                ),
+                ft.TextButton("Установить", on_click=self.install_custom),
+            ],
+        )
+
+        self.update_files()
+
+        
+
+        self.status_text = ft.Text(size=30)
+        self.error_text = ft.Text(size=25)
+        self.status_icon = ft.Icon(size=50)
+        self.status_dialog = ft.AlertDialog(
+            title=ft.Row(
+                [
+                    self.status_icon,
+                    self.status_text,
+                ],
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            content=self.error_text,
+            alignment=ft.alignment.center,
+            title_padding=ft.padding.all(20),
+            content_padding=ft.padding.all(50),
+            on_dismiss=self.on_dismiss,
+        )
+        
         logger.info("HomeScreen initialized with packs loaded")
 
     def build(self) -> ft.Container:
+        self.update_files()
         return self.main_container
 
     def get_custom_vpk(self, e):
@@ -246,7 +300,9 @@ class HomeScreen(Screen):
     def on_resize(self, e):
         self.packs_column.width = self.navigator.page.width - 335
         self.navigator.page.update()
-        logger.debug(f"HomeScreen resized: width={self.navigator.page.width} height={self.navigator.page.height}")
+        logger.debug(
+            f"HomeScreen resized: width={self.navigator.page.width} height={self.navigator.page.height}"
+        )
 
     def select_pack(self, id_pack: int, button: ft.IconButton):
         card = next(c for c in self.list_files if c.select_button == button)
@@ -260,8 +316,10 @@ class HomeScreen(Screen):
         name_file = get_uuid_file(file["id"])
         logger.info(f"Downloading pack {file['name']} ({name_file})")
 
-        for progress in self.api.download_file(file["download_url"], name_file, file["md5"]):
-            card.progress_ring.value = progress/100
+        for progress in self.api.download_file(
+            file["download_url"], name_file, file["md5"]
+        ):
+            card.progress_ring.value = progress / 100
             self.navigator.page.update()
 
         card.progress_ring.visible = False
@@ -328,7 +386,9 @@ class HomeScreen(Screen):
         name_file = get_uuid_file(id_pack)
         logger.info(f"Installing pack {name_file}")
         install_pack(name_file, path, self.api)
-        self.open_status_dialog("Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED)
+        self.open_status_dialog(
+            "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
+        )
         self.navigator.page.update()
 
     def fix_vac(self, e):
@@ -341,7 +401,9 @@ class HomeScreen(Screen):
             )
             return
         patch_dota(path)
-        self.open_status_dialog("Успех", "Ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED)
+        self.open_status_dialog(
+            "Успех", "Ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED
+        )
         logger.success("VAC fixed")
 
     def install_custom(self, e):
@@ -358,6 +420,8 @@ class HomeScreen(Screen):
             )
             return
         install_pack(filename, path, self.api)
-        self.open_status_dialog("Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED)
+        self.open_status_dialog(
+            "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
+        )
         logger.success(f"Custom pack {filename} installed")
         self.navigator.page.update()
