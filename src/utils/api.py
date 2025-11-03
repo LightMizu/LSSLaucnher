@@ -36,16 +36,20 @@ class API:
         try:
             response = requests.post(f'{URL}/auth/token', headers=headers, data=data, timeout=10)
             logger.info(f"Token request returned status code {response.status_code}")
+            response_json = response.json()
             if response.status_code == 200:
-                response_json = response.json()
                 self.token = f"{response_json['token_type'].capitalize()} {response_json['access_token']}"
                 logger.success("Token successfully obtained")
+                return 200
         except requests.RequestException as e:
             logger.error(f"Token request failed: {e}")
             return 0
-
+        
+        if response_json.get("detail") == "Incorrect username or password":
+            return 401
+        elif response_json.get("detail", "") == "Invalid HWID":
+            return 409
         return response.status_code
-
     def get_me(self, hwid: str) -> Tuple[int, dict]:
         """Retrieves user information and returns a tuple containing the status code and the JSON response."""
         logger.info(f"Fetching user info for HWID '{hwid}'")

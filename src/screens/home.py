@@ -13,31 +13,33 @@ from .screen import Screen
 import os
 from loguru import logger
 from typing import List
-
+from typing import Any, Callable, Iterable
 
 class PackCard(ft.Container):
     def add_to_favorites(self, e):
         favorite = []
-
+        logger.info(f"Switch favorites id:{self.id_file}")
         if e.page.client_storage.contains_key("lsslaucher.favorites"):
             favorite = e.page.client_storage.get("lsslaucher.favorites")
+        logger.info(f"List favorites ids:{favorite}")
         if self.id_file in favorite:
+            logger.info(f"Self id exists remove id:{self.id_file}")
             favorite.remove(self.id_file)
             e.control.icon = ft.Icons.STAR_BORDER_ROUNDED
         else:
+            logger.info(f"Self id not exists adding id:{self.id_file}")
             favorite.append(self.id_file)
             e.control.icon = ft.Icons.STAR_ROUNDED
         e.page.client_storage.set("lsslaucher.favorites", favorite)
-        self.update_list()
+        logger.info(f"Updated favorites ids:{favorite}")
         e.page.update()
 
     def __init__(
-        self, file: dict, select_button: ft.Control, favorites: List[int], update_list
+        self, file: dict, select_button: ft.Control, favorites: List[int]
     ):
         self.select_button = select_button
         self.progress_ring = ft.ProgressRing(width=20, height=20, visible=False)
         self.id_file = file["id"]
-        self.update_list = update_list
         super().__init__(
             content=ft.SafeArea(
                 ft.Row(
@@ -81,49 +83,122 @@ class PackCard(ft.Container):
         )
 
 
+
+FAVORITES_KEY = "lsslaucher.favorites"
+
+
+class PackList(ft.ListView):
+    """
+    Отображает список паков с кнопками выбора.
+    - files: итерируемый набор словарей с ключом "id"
+    - on_select: коллбек вида (pack_id: str, button: ft.IconButton) -> None
+    - page: экземпляр ft.Page (нужен для client_storage)
+    """
+
+    def __init__(
+        self,
+        files: Iterable[dict[str, Any]],
+        on_select: Callable[[str, ft.IconButton], None],
+        page: ft.Page,
+    ) -> None:
+        self.page: ft.Page = page
+        self.on_select = on_select
+        self.files: list[dict[str, Any]] = list(files)
+
+        logger.info("Init PackList")
+
+        # Кэшируем избранное и предрасчитываем позиции для сортировки
+        self._favorite_ids: list[str] = self._read_favorites()
+        self._fav_positions: dict[str, int] = {
+            pack_id: idx for idx, pack_id in enumerate(self._favorite_ids)
+        }
+
+        # Строим контролы один раз
+        controls = self._build_controls()
+
+        super().__init__(
+            controls=controls,
+            height=float("inf"),
+            spacing=10,
+            # scroll=ft.ScrollMode.ADAPTIVE,  # включите при необходимости
+        )
+
+    # ---------- Публичные методы ----------
+
+    def before_update(self) -> None:
+        """
+        Вызывается фреймворком перед прорисовкой: перечитываем избранное,
+        пересортировываем и перестраиваем контролы без дублирования кода.
+        """
+        self._favorite_ids = self._read_favorites()
+        self._fav_positions = {
+            pack_id: idx for idx, pack_id in enumerate(self._favorite_ids)
+        }
+
+        logger.info("Updating PackList")
+        logger.debug(f"Favorites: {self._favorite_ids}")
+
+        self.controls = self._build_controls()
+        super().before_update()
+
+    # ---------- Внутренние вспомогательные ----------
+
+    def _read_favorites(self) -> list[str]:
+        """Безопасно читаем список избранного из client_storage."""
+        if self.page.client_storage.contains_key(FAVORITES_KEY):
+            fav = self.page.client_storage.get(FAVORITES_KEY)
+            if isinstance(fav, list) and all(isinstance(x, int) for x in fav):
+                return fav
+            logger.warning(f"Favorites value has unexpected type: {fav}")
+        return []
+
+    def _ordered_files(self) -> list[dict[str, Any]]:
+        """
+        Возвращает файлы, отсортированные так, чтобы избранные были первыми,
+        сохраняя их порядок из избранного.
+        """
+        def sort_key(item: dict[str, Any]) -> tuple[int, str]:
+            pack_id = int(item.get("id", ""))
+            # сначала по позиции в favorites (или бесконечность),
+            # затем по id — стабильная сортировка для остальных
+            pos = self._fav_positions.get(pack_id, float("inf"))
+            return (pos, pack_id)
+
+        return sorted(self.files, key=sort_key)
+
+    def _make_select_button(
+        self, pack_id: str
+    ) -> ft.IconButton:
+        """Создаёт кнопку выбора и вешает обработчик."""
+        btn = ft.IconButton(ft.Icons.CIRCLE_OUTLINED)
+
+        def _on_click(_):
+            self.on_select(pack_id, btn)
+
+        btn.on_click = _on_click
+        return btn
+
+    def _build_controls(self) -> list[ft.Control]:
+        """Строит и возвращает список контролов для ListView."""
+        ordered = self._ordered_files()
+        logger.debug(f"Ordered {len(ordered)} files", )
+
+        cards: list[ft.Control] = []
+        for file in ordered:
+            pack_id = int(file.get("id", ""))
+            select_button = self._make_select_button(pack_id)
+            # PackCard предполагается внешним классом
+            card = PackCard(file, select_button, self._favorite_ids)
+            cards.append(ft.Container(card, padding=ft.padding.only(right=15)))
+        return cards
+
 class HomeScreen(Screen):
-    def before_update(self):
-        logger.debug("Calling before update")
     def update_files(self):
-        logger.info("Updating file list")
-        favorite = []
-        self.list_files = []
-        if self.navigator.page.client_storage.contains_key("lsslaucher.favorites"):
-            favorite = self.navigator.page.client_storage.get("lsslaucher.favorites")
-        file_ordered = sorted(
-            self.files,
-            key=lambda x: favorite.index(x["id"])
-            if x["id"] in favorite
-            else float("inf"),
-        )
-        for file in file_ordered:
-            select_button = ft.IconButton(ft.Icons.CIRCLE_OUTLINED)
-
-            def on_click_factory(f=file, btn=select_button):
-                def on_click(e):
-                    self.select_pack(f["id"], btn)
-
-                return on_click
-
-            select_button.on_click = on_click_factory()
-            self.list_files.append(
-                PackCard(file, select_button, favorite, self.update_files)
-            )
-        self.column_file = list(
-            map(
-                lambda x: ft.Container(x, padding=ft.padding.only(right=15)),
-                self.list_files,
-            )
-        )
+        
         self.packs_column = ft.SafeArea(
             ft.Stack(
                 [
-                    ft.ListView(
-                        self.column_file,
-                        height=float("inf"),
-                        #scroll=ft.ScrollMode.ADAPTIVE,
-                        divider_thickness=10
-                    ),
+                    PackList(self.files, self.select_pack, self.navigator.page),
                     ft.Container(self.install_custom_pack_button, height=30, width=100),
                 ],
                 alignment=ft.alignment.bottom_left,
@@ -252,8 +327,6 @@ class HomeScreen(Screen):
 
         self.update_files()
 
-        
-
         self.status_text = ft.Text(size=30)
         self.error_text = ft.Text(size=25)
         self.status_icon = ft.Icon(size=50)
@@ -272,7 +345,7 @@ class HomeScreen(Screen):
             content_padding=ft.padding.all(50),
             on_dismiss=self.on_dismiss,
         )
-        
+
         logger.info("HomeScreen initialized with packs loaded")
 
     def build(self) -> ft.Container:

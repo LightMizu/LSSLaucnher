@@ -34,7 +34,10 @@ class AuthScreen(Screen):
             self.password_field.border_color = ft.Colors.RED
             self.login_field.value = ''
             self.password_field.value = ''
-            self.error_text.value = 'Неверный логин или пароль, или hwid'
+            if status_code == 401:
+                self.error_text.value = 'Неверный логин или пароль'
+            else:
+                self.error_text.value = 'Неверный идентификатор устройства (HWID). Этот аккаунт привязан к другому ПК. Сбросьте HWID'
             self.navigator.page.update()
 
     def build(self) -> ft.Container:
