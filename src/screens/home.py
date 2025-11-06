@@ -32,11 +32,13 @@ class PackCard(ft.Container):
             e.control.icon = ft.Icons.STAR_ROUNDED
         e.page.client_storage.set("lsslaucher.favorites", favorite)
         logger.info(f"Updated favorites ids:{favorite}")
+        self.reorder_func()
         e.page.update()
 
     def __init__(
-        self, file: dict, select_button: ft.Control, favorites: List[int]
+        self, file: dict, select_button: ft.Control, favorites: List[int], reorder_func
     ):
+        self.reorder_func = reorder_func
         self.select_button = select_button
         self.progress_ring = ft.ProgressRing(width=20, height=20, visible=False)
         self.id_file = file["id"]
@@ -132,7 +134,7 @@ class PackList(ft.ListView):
 
     # ---------- Публичные методы ----------
 
-    def before_update(self) -> None:
+    def reorder(self) -> None:
         """
         Перечитываем избранное, пересортировываем контейнеры.
         Карточки НЕ пересоздаются.
@@ -191,7 +193,7 @@ class PackList(ft.ListView):
         select_button = self._make_select_button(pack_id)
 
         # PackCard — ваш внешний класс, который принимает (file, button, favorite_ids)
-        card = PackCard(file, select_button, self._favorite_ids)
+        card = PackCard(file, select_button, self._favorite_ids, self.reorder)
 
         container = ft.Container(card, padding=ft.padding.only(right=15))
         return pack_id, card, container
@@ -433,7 +435,7 @@ class HomeScreen(Screen):
         card.progress_ring.visible = False
         card.select_button.visible = True
 
-        for i, card in enumerate(self.list_files):
+        for i, card in self.pack_list.cards.items():
             card.select_button.icon = ft.Icons.CIRCLE_OUTLINED
         button.icon = ft.Icons.CIRCLE_ROUNDED
 

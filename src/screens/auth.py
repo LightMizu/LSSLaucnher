@@ -62,13 +62,20 @@ class AuthScreen(Screen):
                     ),
                     self.login_field,
                     self.password_field,
+                    ft.TextButton(
+                        "Забыл пароль",
+                        url="https://t.me/lsslauncher_bot?start=reset_password",
+                        height=20
+                    ),
                     self.error_text,
+                    
                     ft.ElevatedButton(
-                        "Login",
+                        "Войти",
                         on_click=self.auth,
                         width=self.navigator.page.width / 6,
                         height=40
                     ),
+                    
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
