@@ -3,4 +3,5 @@ from .about import AboutScreen # noqa: F401
 from .screen import Screen # noqa: F401
 from .settings import SettingsScreen # noqa: F401
 from .auth import AuthScreen
-__all__ = ['HomeScreen', 'Screen', 'AboutScreen', 'SettingsScreen', 'AuthScreen']
+from .merge import MergeScreen
+__all__ = ['HomeScreen', 'Screen', 'AboutScreen', 'SettingsScreen', 'AuthScreen', "MergeScreen"]

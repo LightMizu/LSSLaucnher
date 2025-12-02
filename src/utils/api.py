@@ -75,8 +75,8 @@ class API:
         }
 
         param = {
-            'skip': 1,
-            'limit': 100,
+            'skip': skip,
+            'limit': limit,
         }
 
         try:

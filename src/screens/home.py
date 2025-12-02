@@ -365,22 +365,23 @@ class HomeScreen(Screen):
             alignment=ft.alignment.center,
         )
 
-        self.status_text = ft.Text(size=30)
-        self.error_text = ft.Text(size=25)
-        self.status_icon = ft.Icon(size=50)
+        self.status_text = ft.Text(size=35, weight=ft.FontWeight.BOLD)
+        self.error_text = ft.Text(size=20, text_align=ft.TextAlign.CENTER)
+        self.status_icon = ft.Icon(size=70)
         self.status_dialog = ft.AlertDialog(
-            title=ft.Row(
+            title=ft.Column(
                 [
                     self.status_icon,
                     self.status_text,
                 ],
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=5,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             content=self.error_text,
             alignment=ft.alignment.center,
-            title_padding=ft.padding.all(20),
-            content_padding=ft.padding.all(50),
+            title_padding=ft.padding.only(top=20,bottom=4,left=40, right=40),
+            content_padding=ft.padding.only(bottom=20, top=4, left=60, right=60),
             on_dismiss=self.on_dismiss,
         )
 
@@ -447,11 +448,12 @@ class HomeScreen(Screen):
         self.status_dialog.content = self.error_text
         self.status_dialog.title_padding = ft.padding.all(20)
 
-    def open_status_dialog(self, status, text, icon):
+    def open_status_dialog(self, status: str, text: str, icon: ft.IconValue, color: ft.Colors = ft.Colors.PRIMARY):
         if not text:
             self.status_dialog.content = None
             self.status_dialog.title_padding = ft.padding.only(25, 21, 25, 0)
         self.status_icon.name = icon
+        self.status_icon.color = color
         self.status_text.value = status
         self.error_text.value = text
         self.navigator.page.open(self.status_dialog)
@@ -466,13 +468,14 @@ class HomeScreen(Screen):
         path = self.navigator.page.client_storage.get("lsslaucher.dota_path")
         if path == "":
             self.open_status_dialog(
-                "Ошибка: Не установлен путь до папки дота 2",
-                None,
+                "ОШИБКА",
+                "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
+                ft.Colors.RED_400
             )
             return
         delete_pack(path)
-        self.open_status_dialog("Успех", "Пак удалён", ft.Icons.CHECK_ROUNDED)
+        self.open_status_dialog("УСПЕШНО", "Пак удалён", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400)
         logger.success("Deleted pack")
         self.navigator.page.update()
 
@@ -482,14 +485,15 @@ class HomeScreen(Screen):
         path = self.navigator.page.client_storage.get("lsslaucher.dota_path")
         if path == "":
             self.open_status_dialog(
-                "Ошибка: Не установлен путь до папки дота 2",
-                None,
+                "ОШИБКА",
+                "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
+                ft.Colors.RED_400
             )
             return
         if id_pack == -1:
             self.open_status_dialog(
-                "Ошибка: Пак не выбран", None, ft.Icons.CLOSE_ROUNDED
+                "ОШИБКА", "Пак не выбран", ft.Icons.CLOSE_ROUNDED, ft.Colors.RED_400
             )
             return
 
@@ -497,7 +501,7 @@ class HomeScreen(Screen):
         logger.info(f"Installing pack {name_file}")
         install_pack(name_file, path, self.api)
         self.open_status_dialog(
-            "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
+            "УСПЕШНО", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
         )
         self.navigator.page.update()
 
@@ -505,14 +509,15 @@ class HomeScreen(Screen):
         path = self.navigator.page.client_storage.get("lsslaucher.dota_path")
         if path == "":
             self.open_status_dialog(
-                "Ошибка: Не установлен путь до папки дота 2",
-                None,
+                "ОШИБКА",
+                "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
+                ft.Colors.RED_400
             )
             return
         patch_dota(path)
         self.open_status_dialog(
-            "Успех", "Ошибка VAC исправлена", ft.Icons.CHECK_ROUNDED
+            "УСПЕШНО", "Фикс матчмейкинга успешно применён", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
         )
         logger.success("VAC fixed")
 
@@ -524,14 +529,15 @@ class HomeScreen(Screen):
         path = self.navigator.page.client_storage.get("lsslaucher.dota_path")
         if path == "":
             self.open_status_dialog(
-                "Ошибка: Не установлен путь до папки дота 2",
-                None,
+                "ОШИБКА",
+                "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
+                ft.Colors.RED_400
             )
             return
         install_pack(filename, path, self.api)
         self.open_status_dialog(
-            "Успех", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED
+            "УСПЕШНО", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
         )
         logger.success(f"Custom pack {filename} installed")
         self.navigator.page.update()

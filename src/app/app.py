@@ -1,5 +1,5 @@
 import flet as ft
-from screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen
+from screens import HomeScreen, SettingsScreen, AboutScreen, AuthScreen, MergeScreen
 from utils import API, AuthUtil, ScreenManager, get_dota2_install_path
 from pathlib import Path
 from loguru import logger
@@ -106,7 +106,7 @@ class Launcher:
                         nav_segment("home", "Главная"),
                         nav_segment("settings", "Настройки"),
                         nav_segment("shop", "Магазин", disabled=True),
-                        nav_segment("merge", "Совмещение", disabled=True),
+                        nav_segment("merge", "Совмещение"),
                         nav_segment("about", "О нас"),
                     ],
                     height=70,
@@ -148,6 +148,7 @@ class Launcher:
     def setup_screens(self):
         self.screen_manager.add_screen("home", HomeScreen(self.screen_manager, self.api))
         self.screen_manager.add_screen("settings", SettingsScreen(self.screen_manager))
+        self.screen_manager.add_screen("merge", MergeScreen(self.screen_manager, self.api))
         self.screen_manager.add_screen("about", AboutScreen(self.screen_manager))
 
         logger.info("Main screens setup completed")
