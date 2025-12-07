@@ -16,8 +16,14 @@ class MergeScreen(Screen):
         self.api = api
 
         # основная кнопка
-        self.merge_button = ft.Button(
-            "Совместить", height=60, width=300, on_click=self.merge_start
+        self.merge_button = ft.FilledButton(
+            "Начать совмещение",  # type: ignore
+            height=60,
+            width=300,
+            on_click=self.merge_start,
+            bgcolor=ft.Colors.PRIMARY,
+            color=ft.Colors.ON_SECONDARY,
+            style=ft.ButtonStyle(text_style=ft.TextStyle(size=25, weight="bold")),
         )
         self.action_button = self.merge_button
 
@@ -35,6 +41,7 @@ class MergeScreen(Screen):
             enable_filter=True,
             editable=True,
             border_color=ft.Colors.WHITE,
+            border_radius=7,
             menu_height=self.navigator.page.height / 3,
         )
 
@@ -55,38 +62,65 @@ class MergeScreen(Screen):
                 [
                     ft.Column(
                         [
+                            ft.Container(expand=3),
                             ft.Row(
                                 [
-                                    ft.Column(
-                                        [
-                                            ft.Text("Основной пак", size=20),
-                                            ft.Container(
-                                                self.main_pack_menu,
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER,
-                                            ),
-                                        ],
-                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ft.Container(
+                                        ft.Column(
+                                            [
+                                                ft.Text("Основной пак", size=20),
+                                                ft.Container(
+                                                    self.main_pack_menu,
+                                                    bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                                                    border_radius=7,
+                                                ),
+                                            ],
+                                        ),
+                                        bgcolor=ft.Colors.ON_SECONDARY,
+                                        border_radius=15,
+                                        padding=ft.padding.symmetric(
+                                            vertical=30, horizontal=15
+                                        ),
                                     ),
-                                    ft.Icon(name=ft.Icons.ADD_ROUNDED, size=50),
-                                    ft.Column(
-                                        [
-                                            ft.Text("Доп. пак", size=20),
-                                            ft.Container(
-                                                self.second_pack_menu,
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER,
-                                            ),
-                                        ],
-                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ft.Container(
+                                        ft.Icon(name=ft.Icons.ADD_ROUNDED, size=50),
+                                        border_radius=25,
+                                        bgcolor=ft.Colors.ON_SECONDARY,
+                                    ),
+                                    ft.Container(
+                                        ft.Column(
+                                            [
+                                                ft.Text("Доп. пак", size=20),
+                                                ft.Container(
+                                                    self.second_pack_menu,
+                                                    bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                                                    border_radius=7,
+                                                ),
+                                            ],
+                                        ),
+                                        bgcolor=ft.Colors.ON_SECONDARY,
+                                        border_radius=15,
+                                        padding=ft.padding.symmetric(
+                                            vertical=30, horizontal=15
+                                        ),
                                     ),
                                 ],
                                 alignment=ft.MainAxisAlignment.CENTER,
-                                vertical_alignment=ft.CrossAxisAlignment.END,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             ),
                             # вместо self.action_button теперь подставляем контейнер
                             self.action_container,
+                            ft.Container(expand=2),
+                            ft.Text(
+                                "Выберите Основной пак, затем дополнительный. Основной пак имеет приоритет.",
+                                color=ft.Colors.OUTLINE_VARIANT,
+                                size=30,
+                            ),
                         ],
+                        expand=True,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=100,
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -156,12 +190,8 @@ class MergeScreen(Screen):
         page = self.navigator.page
 
         if self.result_key:
-            progress_bar = ft.ProgressRing(
-                width=100,
-                height=100,
-                stroke_width=50,
-                stroke_align=-1,
-                stroke_cap=ft.StrokeCap.ROUND,
+            progress_bar = ft.ProgressBar(
+                height=50, width=self.navigator.page.width / 2, border_radius=30
             )
             uuid = pathlib.Path(self.result_key).stem
             self.set_action_control(progress_bar)
