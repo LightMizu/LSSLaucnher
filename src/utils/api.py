@@ -158,7 +158,7 @@ class API:
             logger.info(
                 f"Task merge added returned status code {response.status_code} with task_id {response.json()}"
             )
-            return response.status_code, response.json()
+            return response.status_code, response.json()["id"]
         except requests.RequestException as e:
             logger.error(f"Failed to add task: {e}")
             return 0, ""
@@ -170,7 +170,7 @@ class API:
             "Authorization": self.token,
         }
         try:
-            response = requests.get(f"{URL}/tas/{task_id}", headers=headers)
+            response = requests.get(f"{URL}/task/{task_id}", headers=headers)
             return response.status_code, response.json()
         except Exception as e:
             logger.error(f" Failed to get task {e}")

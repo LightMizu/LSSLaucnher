@@ -1,8 +1,11 @@
+import pathlib
 from asyncio import sleep
+from venv import logger
 
 import flet as ft
 
 from utils import API
+from utils.install_pack import install_pack
 
 from .screen import Screen
 
@@ -111,13 +114,15 @@ class MergeScreen(Screen):
             timeout -= 1
             await sleep(1)
             status_code, resp_json = self.api.get_task_status(self.task_id)
+            logger.info(resp_json)
             if resp_json.get("progress", "") == "Status.DONE":
                 self.result_key = resp_json.get("result_key", "")
                 break
 
-        # <<< тут вызываем функцию, которая заменяет action_button на предложение
-        # скачать/установить пак или отменить >>>
-        self.show_result_actions()
+        if self.result_key:
+            self.show_result_actions()
+        else:
+            self.cancel_merge(None)
 
     def show_result_actions(self) -> None:
         """Показываем варианты: скачать и установить пак или отменить."""
@@ -151,15 +156,28 @@ class MergeScreen(Screen):
         page = self.navigator.page
 
         if self.result_key:
-            page.snack_bar = ft.SnackBar(
-                ft.Text("Загрузка/установка пакета ещё не реализована.")
+            progress_bar = ft.ProgressRing(
+                width=100,
+                height=100,
+                stroke_width=50,
+                stroke_align=-1,
+                stroke_cap=ft.StrokeCap.ROUND,
             )
-        else:
-            page.snack_bar = ft.SnackBar(
-                ft.Text("Результат ещё не готов или произошла ошибка.")
+            uuid = pathlib.Path(self.result_key).stem
+            self.set_action_control(progress_bar)
+            for progress in self.api.download_file(
+                f"https://{self.result_key}", uuid, None
+            ):
+                progress_bar.value = progress / 100
+                self.set_action_control(progress_bar)
+                print(progress)
+            install_pack(
+                uuid,
+                self.navigator.page.client_storage.get("lsslaucher.dota_path"),
+                self.api,
             )
-
-        page.snack_bar.open = True
+            page.update()
+        self.cancel_merge(None)
         page.update()
 
     def cancel_merge(self, e) -> None:
@@ -175,7 +193,8 @@ class MergeScreen(Screen):
         second_key = self.second_pack_menu.value
 
         if main_key and second_key:
-            self.task_id = self.api.merge_pack(main_key, second_key)
+            _, self.task_id = self.api.merge_pack(main_key, second_key)
+            self.task_id = self.task_id
             self.navigator.page.run_task(self.update_progress)
         else:
             # если не выбраны паки, возвращаем кнопку и показываем сообщение
