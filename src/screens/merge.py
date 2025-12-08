@@ -112,9 +112,10 @@ class MergeScreen(Screen):
                             ft.Container(expand=1),
                             self.action_container,
                             ft.Text(
-                                "Выберите Основной пак, затем дополнительный. Основной пак имеет приоритет.",
+                                "Выберите Основной пак, затем дополнительный.\n Основной пак имеет приоритет.",
                                 color=ft.Colors.OUTLINE_VARIANT,
                                 size=18,
+                                text_align=ft.TextAlign.CENTER,
                             ),
                             ft.Container(expand=30),
                             ft.Text(
