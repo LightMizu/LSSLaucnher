@@ -40,7 +40,7 @@ class MergeScreen(Screen):
             bgcolor=ft.Colors.SECONDARY_CONTAINER,
             enable_filter=True,
             editable=True,
-            border_color=ft.Colors.WHITE,
+            border_color=ft.Colors.TRANSPARENT,
             border_radius=7,
             menu_height=self.navigator.page.height / 3,
         )
@@ -50,7 +50,7 @@ class MergeScreen(Screen):
             bgcolor=ft.Colors.SECONDARY_CONTAINER,
             enable_filter=True,
             editable=True,
-            border_color=ft.Colors.WHITE,
+            border_color=ft.Colors.TRANSPARENT,
             menu_height=self.navigator.page.height / 3,
         )
 
@@ -109,7 +109,7 @@ class MergeScreen(Screen):
                                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             ),
                             # вместо self.action_button теперь подставляем контейнер
-                            ft.Container(expand=1),
+                            ft.Container(expand=10),
                             self.action_container,
                             ft.Text(
                                 "Выберите Основной пак, затем дополнительный.\n Основной пак имеет приоритет.",
@@ -121,7 +121,7 @@ class MergeScreen(Screen):
                             ft.Text(
                                 "Учтите что это бета-версия и совмещение может работать некорректно!",
                                 color=ft.Colors.OUTLINE_VARIANT,
-                                size=30,
+                                size=25,
                             ),
                         ],
                         expand=True,
