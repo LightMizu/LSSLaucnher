@@ -62,7 +62,7 @@ class MergeScreen(Screen):
                 [
                     ft.Column(
                         [
-                            ft.Container(expand=3),
+                            ft.Container(expand=35),
                             ft.Row(
                                 [
                                     ft.Container(
@@ -109,10 +109,16 @@ class MergeScreen(Screen):
                                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             ),
                             # вместо self.action_button теперь подставляем контейнер
+                            ft.Container(expand=1),
                             self.action_container,
-                            ft.Container(expand=2),
                             ft.Text(
                                 "Выберите Основной пак, затем дополнительный. Основной пак имеет приоритет.",
+                                color=ft.Colors.OUTLINE_VARIANT,
+                                size=18,
+                            ),
+                            ft.Container(expand=30),
+                            ft.Text(
+                                "Учтите что это бета-версия и совмещение может работать некорректно!",
                                 color=ft.Colors.OUTLINE_VARIANT,
                                 size=30,
                             ),
@@ -120,7 +126,6 @@ class MergeScreen(Screen):
                         expand=True,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         alignment=ft.MainAxisAlignment.CENTER,
-                        spacing=100,
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
