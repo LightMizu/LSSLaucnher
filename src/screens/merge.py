@@ -255,7 +255,7 @@ class MergeScreen(Screen):
             self.open_status_dialog(
                 "УСПЕШНО",
                 "Пак установлен, запустите игру",
-                ft.Icons.CHECKLIST_ROUNDED,
+                ft.Icons.CHECK_ROUNDED,
                 ft.Colors.GREEN_400,
             )
         self.cancel_merge(None)
