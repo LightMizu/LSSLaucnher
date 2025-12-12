@@ -14,7 +14,26 @@ class MergeScreen(Screen):
     def __init__(self, navigator, api: API):
         self.navigator = navigator
         self.api = api
+        self.status_icon = ft.Icon()
+        self.status_text = ft.Text()
+        self.error_text = ft.Text()
 
+        self.status_dialog = ft.AlertDialog(
+            title=ft.Column(
+                [
+                    self.status_icon,
+                    self.status_text,
+                ],
+                spacing=5,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            content=self.error_text,
+            alignment=ft.alignment.center,
+            title_padding=ft.padding.only(top=20, bottom=4, left=40, right=40),
+            content_padding=ft.padding.only(bottom=20, top=4, left=60, right=60),
+            on_dismiss=self.on_dismiss,
+        )
         # основная кнопка
         self.merge_button = ft.FilledButton(
             "Начать совмещение",  # type: ignore
@@ -141,6 +160,27 @@ class MergeScreen(Screen):
         self.action_container.content = control
         self.navigator.page.update()
 
+    def open_status_dialog(
+        self,
+        status: str,
+        text: str,
+        icon: ft.IconValue,
+        color: ft.Colors = ft.Colors.PRIMARY,
+    ):
+        if not text:
+            self.status_dialog.content = None
+            self.status_dialog.title_padding = ft.padding.only(25, 21, 25, 0)
+        self.status_icon.name = icon
+        self.status_icon.color = color
+        self.status_text.value = status
+        self.error_text.value = text
+        self.navigator.page.open(self.status_dialog)
+        logger.info(f"Status dialog: {status}")
+
+    def on_dismiss(self, e):
+        self.status_dialog.content = self.error_text
+        self.status_dialog.title_padding = ft.padding.all(20)
+
     def on_resize(self, e) -> None:
         pass
 
@@ -188,7 +228,6 @@ class MergeScreen(Screen):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             alignment=ft.MainAxisAlignment.CENTER,
         )
-
         self.set_action_control(actions_column)
 
     def download_and_install(self, e) -> None:
@@ -213,6 +252,12 @@ class MergeScreen(Screen):
                 self.api,
             )
             page.update()
+            self.open_status_dialog(
+                "УСПЕШНО",
+                "Пак установлен, запустите игру",
+                ft.Icons.CHECKLIST_ROUNDED,
+                ft.Colors.GREEN_400,
+            )
         self.cancel_merge(None)
         page.update()
 

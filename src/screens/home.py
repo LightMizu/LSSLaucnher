@@ -1,19 +1,21 @@
+import os
+from typing import Any, Callable, Iterable, List
+
 import flet as ft
+from loguru import logger
 
 from utils.api import API
 from utils.helpers import find_by_key, get_uuid_file, human_readable_size, open_folder
 from utils.install_pack import (
+    APP_DATA_PATH,
     delete_pack,
     install_pack,
     launch_dota,
     patch_dota,
-    APP_DATA_PATH,
 )
+
 from .screen import Screen
-import os
-from loguru import logger
-from typing import List
-from typing import Any, Callable, Iterable
+
 
 class PackCard(ft.Container):
     def add_to_favorites(self, e):
@@ -84,7 +86,6 @@ class PackCard(ft.Container):
             expand=True,
             border_radius=20,
         )
-
 
 
 FAVORITES_KEY = "lsslaucher.favorites"
@@ -167,6 +168,7 @@ class PackList(ft.ListView):
         Возвращает файлы, отсортированные так, чтобы избранные были первыми,
         сохраняя их порядок из избранного.
         """
+
         def sort_key(item: dict[str, Any]) -> tuple[int, int]:
             pack_id = int(item.get("id", 0))
             pos = self._fav_positions.get(pack_id, 10**9)  # «бесконечность»
@@ -234,6 +236,7 @@ class PackList(ft.ListView):
                 self._containers_by_id[pid] = container
                 result.append(container)
         return result
+
 
 class HomeScreen(Screen):
     def __init__(self, navigator, api: API):
@@ -380,7 +383,7 @@ class HomeScreen(Screen):
             ),
             content=self.error_text,
             alignment=ft.alignment.center,
-            title_padding=ft.padding.only(top=20,bottom=4,left=40, right=40),
+            title_padding=ft.padding.only(top=20, bottom=4, left=40, right=40),
             content_padding=ft.padding.only(bottom=20, top=4, left=60, right=60),
             on_dismiss=self.on_dismiss,
         )
@@ -448,7 +451,13 @@ class HomeScreen(Screen):
         self.status_dialog.content = self.error_text
         self.status_dialog.title_padding = ft.padding.all(20)
 
-    def open_status_dialog(self, status: str, text: str, icon: ft.IconValue, color: ft.Colors = ft.Colors.PRIMARY):
+    def open_status_dialog(
+        self,
+        status: str,
+        text: str,
+        icon: ft.IconValue,
+        color: ft.Colors = ft.Colors.PRIMARY,
+    ):
         if not text:
             self.status_dialog.content = None
             self.status_dialog.title_padding = ft.padding.only(25, 21, 25, 0)
@@ -471,11 +480,13 @@ class HomeScreen(Screen):
                 "ОШИБКА",
                 "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
-                ft.Colors.RED_400
+                ft.Colors.RED_400,
             )
             return
         delete_pack(path)
-        self.open_status_dialog("УСПЕШНО", "Пак удалён", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400)
+        self.open_status_dialog(
+            "УСПЕШНО", "Пак удалён", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
+        )
         logger.success("Deleted pack")
         self.navigator.page.update()
 
@@ -488,7 +499,7 @@ class HomeScreen(Screen):
                 "ОШИБКА",
                 "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
-                ft.Colors.RED_400
+                ft.Colors.RED_400,
             )
             return
         if id_pack == -1:
@@ -501,7 +512,10 @@ class HomeScreen(Screen):
         logger.info(f"Installing pack {name_file}")
         install_pack(name_file, path, self.api)
         self.open_status_dialog(
-            "УСПЕШНО", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
+            "УСПЕШНО",
+            "Пак установлен, запустите игру",
+            ft.Icons.CHECK_ROUNDED,
+            ft.Colors.GREEN_400,
         )
         self.navigator.page.update()
 
@@ -512,12 +526,15 @@ class HomeScreen(Screen):
                 "ОШИБКА",
                 "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
-                ft.Colors.RED_400
+                ft.Colors.RED_400,
             )
             return
         patch_dota(path)
         self.open_status_dialog(
-            "УСПЕШНО", "Фикс матчмейкинга успешно применён", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
+            "УСПЕШНО",
+            "Фикс матчмейкинга успешно применён",
+            ft.Icons.CHECK_ROUNDED,
+            ft.Colors.GREEN_400,
         )
         logger.success("VAC fixed")
 
@@ -532,12 +549,15 @@ class HomeScreen(Screen):
                 "ОШИБКА",
                 "Не установлен путь до папки dota2beta",
                 ft.Icons.CLOSE_ROUNDED,
-                ft.Colors.RED_400
+                ft.Colors.RED_400,
             )
             return
         install_pack(filename, path, self.api)
         self.open_status_dialog(
-            "УСПЕШНО", "Пак установлен, запустите игру", ft.Icons.CHECK_ROUNDED, ft.Colors.GREEN_400
+            "УСПЕШНО",
+            "Пак установлен, запустите игру",
+            ft.Icons.CHECK_ROUNDED,
+            ft.Colors.GREEN_400,
         )
         logger.success(f"Custom pack {filename} installed")
         self.navigator.page.update()
