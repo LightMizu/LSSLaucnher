@@ -252,6 +252,8 @@ class HomeScreen(Screen):
                 self.install_custom_pack_dialog
             ),
         )
+        self.audioplayer = ft.Audio(src="complete.wav")
+        self.navigator.page.overlay.append(self.audioplayer)
         logger.info(f"APP_DATA_PATH: {APP_DATA_PATH}")
         self.install_custom_pack_dialog = ft.AlertDialog(
             modal=True,
@@ -435,7 +437,7 @@ class HomeScreen(Screen):
         ):
             card.progress_ring.value = progress / 100
             self.navigator.page.update()
-
+        self.audioplayer.play()
         card.progress_ring.visible = False
         card.select_button.visible = True
 

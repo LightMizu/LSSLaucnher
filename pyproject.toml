@@ -14,7 +14,8 @@ dependencies = [
     "aiohttp (>=3.12.15,<4.0.0)",
     "pyinstaller (>=6.16.0,<7.0.0)",
     "loguru (>=0.7.3,<0.8.0)",
-    "wmi (>=1.5.1,<2.0.0)"
+    "wmi (>=1.5.1,<2.0.0); sys.platform=='win32'",
+    "flet-audio (>=0.1.0,<0.2.0)"
 ]
 
 [tool.poetry]
@@ -29,9 +30,9 @@ org = "com.lssproduction"
 product = "lsslauncher"
 company = "LSSProduction"
 copyright = "Copyright (C) 2025 by LSSProduction"
-compile.app = true 
-compile.packages = true 
-compile.cleanup = true 
+compile.app = true
+compile.packages = true
+compile.cleanup = true
 
 [tool.flet.app]
 path = "src"
