@@ -14,6 +14,8 @@ class MergeScreen(Screen):
     def __init__(self, navigator, api: API):
         self.navigator = navigator
         self.api = api
+        self.audioplayer = ft.Audio(src="complete.wav")
+        self.navigator.page.overlay.append(self.audioplayer)
         self.status_icon = ft.Icon()
         self.status_text = ft.Text()
         self.error_text = ft.Text()
@@ -206,7 +208,7 @@ class MergeScreen(Screen):
 
     def show_result_actions(self) -> None:
         """Показываем варианты: скачать и установить пак или отменить."""
-
+        self.audioplayer.play()
         download_btn = ft.Button(
             "Скачать и установить пак",
             height=50,
