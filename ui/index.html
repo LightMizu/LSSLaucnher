@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pack Mixer</title>
+
+        <!-- Подключаем собранный Tailwind CSS -->
+
+        <!-- Import maps для React, если нужен -->
+
+        <script>
+            window.addEventListener("pywebviewready", function () {
+                const originalLog = console.log;
+                console.log = function () {
+                    // Отправляем в Python
+                    const args = Array.from(arguments)
+                        .map((arg) =>
+                            typeof arg === "object" ? JSON.stringify(arg) : arg,
+                        )
+                        .join(" ");
+
+                    window.pywebview.api.log(args);
+
+                    // Сохраняем вывод в обычной консоли браузера
+                    originalLog.apply(console, arguments);
+                };
+            });
+        </script>
+        <script type="importmap">
+            {
+                "imports": {
+                    "react": "https://aistudiocdn.com/react@^19.2.1",
+                    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+                    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+                    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0"
+                }
+            }
+        </script>
+      <script type="module" crossorigin src="./assets/index-CdvvSsD8.js"></script>
+      <link rel="stylesheet" crossorigin href="./assets/index-IcrkeGS0.css">
+    </head>
+    <body>
+        <div id="root"></div>
+        </div>
+        <!-- React entry point -->
+    </body>
+</html>

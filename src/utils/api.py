@@ -115,6 +115,8 @@ class API:
 
     def download_file(self, url, name, hash_file) -> Iterator[float]:
         logger.info(f"Starting download for file '{name}'")
+        if not os.path.exists(APP_DATA_PATH):
+            os.makedirs(APP_DATA_PATH)
         local_filename = Path(APP_DATA_PATH) / name
 
         # Check local file
