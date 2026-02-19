@@ -1,6 +1,8 @@
 {
-    "favorites": [],
+    "favorites": [
+        "60"
+    ],
     "installed_packs": [],
     "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc3MzkxMjQ0OX0.FqyyvrKp5FF3JRiaPF0bxCCFJAIUTocFt-bzhQiBNkc",
-    "dota_path": ""
+    "dota_path": "D:\\SteamLibrary\\steamapps\\common\\dota 2 beta"
 }

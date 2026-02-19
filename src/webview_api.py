@@ -380,7 +380,7 @@ class PyWebAPI:
             except Exception as e:
                 logger.error(f"Download pack failed: {e}")
                 webview.active_window().evaluate_js(
-                     f"window.__lsslauncher_on_download_error?.('{str(e)}')"
+                     f"window.__lsslauncher_on_download_error?.('{id}')"
                 )
 
         threading.Thread(target=worker, daemon=True).start()
