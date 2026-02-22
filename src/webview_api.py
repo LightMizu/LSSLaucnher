@@ -148,6 +148,17 @@ class PyWebAPI:
         logger.info(f"ACTION: {name} {payload}")
         return {"ok": True}
 
+    def open_pack_dir(self):
+        try:
+            import os
+            packs_path = Path(APP_DATA_PATH)
+            if packs_path.exists():
+                os.startfile(str(packs_path))
+            else:
+                logger.error(f"Pack directory not found: {packs_path}")
+        except Exception as e:
+            logger.error(f"Failed to open pack directory: {e}")
+
     # =====================
     # SHOP
     # =====================

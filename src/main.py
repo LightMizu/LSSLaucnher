@@ -17,7 +17,7 @@ if str(current_dir) not in sys.path:
 
 
 def main():
-    logger.add("dota_launcher.log", rotation="1 MB")
+    logger.add("dota_launcher.log", rotation="11290 MB")
     logger.info("Starting LSS Launcher with React UI")
 
     api = PyWebAPI()

@@ -1,8 +1,0 @@
-
-# Validated dependencies for LSS Launcher React Integration
-pywebview
-loguru
-requests
-# flet is used by existing app modules, so we must include it to avoid ImportErrors 
-# if we import utils that depend on it (e.g. screen_manager imports flet)
-flet
