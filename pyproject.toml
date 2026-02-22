@@ -19,8 +19,6 @@ dependencies = [
 
 [tool.poetry]
 packages = [
-    { include = "app", from = "src" },
-    { include = "screens", from = "src" },
     { include = "utils", from = "src" },
 ]
 

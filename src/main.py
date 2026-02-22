@@ -5,13 +5,16 @@ import os
 from pathlib import Path
 
 # Add src to sys.path to ensure imports work correctly if run from outside
-current_dir = Path(__file__).parent
-if str(current_dir) not in sys.path:
-    sys.path.append(str(current_dir))
 
 import webview
 from loguru import logger
 from webview_api import PyWebAPI
+
+
+current_dir = Path(__file__).parent
+if str(current_dir) not in sys.path:
+    sys.path.append(str(current_dir))
+
 
 def main():
     logger.add("dota_launcher.log", rotation="1 MB")
@@ -19,10 +22,11 @@ def main():
 
     api = PyWebAPI()
     
-    # Resolve UI path
-    # src/main_react.py -> project_root/ui/index.html
-    project_root = current_dir.parent
-    ui_path = project_root / "ui" / "index.html"
+    # Resolve UI path for both source runs and PyInstaller one-file mode.
+    if hasattr(sys, "_MEIPASS"):
+        ui_path = Path(sys._MEIPASS) / "ui" / "index.html"
+    else:
+        ui_path = current_dir.parent / "ui" / "index.html"
     
     if not ui_path.exists():
         logger.error(f"UI file not found at {ui_path}")
@@ -43,11 +47,11 @@ def main():
         easy_drag=False,
         min_size=(1000, 700),
         width=1200,
-        height=715
+        height=800
     )
     
     # Enable dev tools for debugging
-    webview.start(debug=True, http_server=True)
+    webview.start(debug=False, http_server=True)
 
 if __name__ == "__main__":
     main()

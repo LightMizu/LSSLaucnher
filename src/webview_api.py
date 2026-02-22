@@ -19,6 +19,7 @@ from utils.install_pack import (
     patch_dota,
     delete_pack,
 )
+from utils.install_pack import APP_DATA_PATH
 
 PERSISTENCE_FILE = Path(get_folder()) / "persistence.json"
 
@@ -45,10 +46,25 @@ class PyWebAPI:
         if PERSISTENCE_FILE.exists():
             try:
                 with open(PERSISTENCE_FILE, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    loaded = json.load(f)
+                    # Backward-compatible defaults for newly added settings keys.
+                    loaded.setdefault("favorites", [])
+                    loaded.setdefault("installed_packs", [])
+                    loaded.setdefault("token", None)
+                    loaded.setdefault("dota_path", "")
+                    loaded.setdefault("sound_enabled", True)
+                    loaded.setdefault("settings", {})
+                    return loaded
             except Exception as e:
                 logger.error(f"Failed to load state: {e}")
-        return {"favorites": [], "installed_packs": [], "token": None, "dota_path": ""}
+        return {
+            "favorites": [],
+            "installed_packs": [],
+            "token": None,
+            "dota_path": "",
+            "sound_enabled": True,
+            "settings": {},
+        }
 
     def _invalidate_cache(self):
         self.files_cache = None
@@ -61,6 +77,11 @@ class PyWebAPI:
                 json.dump(self.state, f, indent=4)
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
+
+    def _get_window(self):
+        if webview.windows:
+            return webview.windows[0]
+        return None
 
     # =====================
     # GENERAL
@@ -278,7 +299,7 @@ class PyWebAPI:
                 
                 if result_key:
                     self.current_mix_result_key = result_key
-                    webview.active_window().evaluate_js(
+                    webview.windows[0].evaluate_js(
                         f'window.__lsslauncher_on_mix_ready?.("merge")'
                     )
                 else:
@@ -305,13 +326,13 @@ class PyWebAPI:
                     return
 
                 for progress in self.api.download_file(url, uuid, None):
-                     webview.active_window().evaluate_js(
+                     webview.windows[0].evaluate_js(
                         f"window.__lsslauncher_on_mix_progress?.({progress})"
                     )
                 
                 install_pack_func(uuid, dota_path, self.api)
                 
-                webview.active_window().evaluate_js("window.__lsslauncher_on_mix_done?.()")
+                webview.windows[0].evaluate_js("window.__lsslauncher_on_mix_done?.()")
             except Exception as e:
                 logger.error(f"Error in download_mix: {e}")
 
@@ -325,28 +346,31 @@ class PyWebAPI:
     # HOME MENU
     # =====================
     def close(self):
-        webview.active_window().destroy()
+        webview.windows[0].destroy()
 
     def minimize(self):
-        webview.active_window().minimize()
+        webview.windows[0].minimize()
 
     def launch_game(self):
         launch_dota()
 
-    def install_game(self):
-        # Not implemented in backend?
-        pass
 
     def update_fix(self):
         dota_path = self._ensure_dota_path()
         if dota_path:
             patch_dota(dota_path)
+            webview.windows[0].evaluate_js(
+                    f"window.__lsslauncher_on_update_fix_done?.()"
+                    )
 
-    def uninstall_game(self):
+    def uninstall_pack(self):
         # Maybe delete pack?
         dota_path = self._ensure_dota_path()
         if dota_path:
             delete_pack(dota_path)
+            webview.windows[0].evaluate_js(
+                        f"window.__lsslauncher_on_delete_pack_done?.()"
+                    )
             self.state["installed_packs"] = []
             self._save_state()
             self._invalidate_cache()
@@ -369,17 +393,17 @@ class PyWebAPI:
                 md5 = file_info.get("md5")
 
                 for p in self.api.download_file(download_url, name_file, md5):
-                    webview.active_window().evaluate_js(
+                    webview.windows[0].evaluate_js(
                         f"window.__lsslauncher_on_download_progress?.('{id}', {p})"
                     )
 
-                webview.active_window().evaluate_js(
+                webview.windows[0].evaluate_js(
                     f"window.__lsslauncher_on_download_done?.('{id}')"
                 )
                 self._invalidate_cache()
             except Exception as e:
                 logger.error(f"Download pack failed: {e}")
-                webview.active_window().evaluate_js(
+                webview.windows[0].evaluate_js(
                      f"window.__lsslauncher_on_download_error?.('{id}')"
                 )
 
@@ -399,6 +423,15 @@ class PyWebAPI:
             self.state["installed_packs"] = list(installed)
             self._save_state()
             self._invalidate_cache()
+            webview.windows[0].evaluate_js(
+                f"window.__lsslauncher_on_install_done?.()"
+            )
+            
+        except FileNotFoundError:
+                webview.windows[0].evaluate_js(
+                        f"window.__lsslauncher_set_modal?.(true, 'Установленная не верная директория Dota 2. Пожалуйста, проверьте путь в настройках.')"
+                    )
+                logger.error(f"Pack file not found for installation: {id}")
         except Exception as e:
              logger.error(f"Install pack failed: {e}")
 
@@ -418,10 +451,140 @@ class PyWebAPI:
          threading.Thread(target=lambda: webbrowser.open(f"https://lsslauncher.xyz/files/{id}"), daemon=True).start()
 
     def add_custom_pack(self):
-        # This would require opening a file dialog
-        # Webview has create_file_dialog but it blocks?
-        # For now, simplistic implementation or skip
-        pass
+        def worker():
+            try:
+                data_path = Path(APP_DATA_PATH)
+                if not data_path.exists():
+                    files = []
+                else:
+                    files = [p.name for p in data_path.iterdir() if p.is_file() and p.name.lower().endswith('.vpk')]
+
+                js_list = json.dumps(files)
+                window = self._get_window()
+                if window:
+                    window.evaluate_js(f"window.__lsslauncher_select_custom?.({js_list})")
+            except Exception as e:
+                logger.error(f"add_custom_pack failed: {e}")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def selected_custom(self, pack: str):
+        # Install a custom pack selected from the packs folder
+        dota_path = self._ensure_dota_path()
+        if not dota_path:
+            window = self._get_window()
+            if window:
+                window.evaluate_js(
+                    "window.__lsslauncher_set_modal?.(true, 'Установленная не верная директория Dota 2. Пожалуйста, проверьте путь в настройках.')"
+                )
+            return {"ok": False, "error": "dota_path_not_found"}
+
+        try:
+            # `pack` is expected to be a filename (including extension) located in APP_DATA_PATH
+            install_pack_func(pack, dota_path, self.api)
+
+            installed = set(self.state.get("installed_packs", []))
+            installed.add(str(pack))
+            self.state["installed_packs"] = list(installed)
+            self._save_state()
+            self._invalidate_cache()
+            return {"ok": True}
+        except FileNotFoundError:
+            window = self._get_window()
+            if window:
+                window.evaluate_js(
+                    "window.__lsslauncher_set_modal?.(true, 'Установленная не верная директория Dota 2. Пожалуйста, проверьте путь в настройках.')"
+                )
+            logger.error(f"Selected custom pack file not found: {pack}")
+            return {"ok": False, "error": "file_not_found"}
+        except Exception as e:
+            logger.error(f"selected_custom failed: {e}")
+            return {"ok": False, "error": "exception", "message": str(e)}
+
+    # =====================
+    # SETTINGS
+    # =====================
+    def _extract_folder_path(self, payload: Any) -> Optional[str]:
+        if isinstance(payload, str):
+            value = payload.strip()
+            return value or None
+
+        if isinstance(payload, dict):
+            # Frontends sometimes pass object payloads to pywebview API methods.
+            for key in ("folder_path", "path", "dota_path"):
+                value = payload.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+        return None
+
+    def set_game_folder(self, folder_path: Any):
+        normalized_path = self._extract_folder_path(folder_path)
+        if not normalized_path:
+            return {"ok": False, "error": "empty_path"}
+
+        path = Path(normalized_path).expanduser()
+        if not path.exists() or not path.is_dir():
+            return {"ok": False, "error": "invalid_path"}
+
+        resolved = str(path.resolve())
+        self.state["dota_path"] = resolved
+        self._save_state()
+        return {"ok": True, "dota_path": resolved}
+
+    def select_game_folder(self):
+        try:
+            window = self._get_window()
+            if window is None:
+                return {"ok": False, "error": "window_not_ready"}
+
+            selected = window.create_file_dialog(webview.FOLDER_DIALOG)
+            if not selected:
+                return {"ok": False, "error": "cancelled"}
+
+            # pywebview may return tuple/list depending on backend.
+            selected_path = selected[0] if isinstance(selected, (list, tuple)) else selected
+            return selected_path
+        except Exception as e:
+            logger.error(f"select_game_folder failed: {e}")
+            return {"ok": False, "error": "dialog_error"}
+
+    def on_change_sound(self, enabled: bool):
+        self.state["sound_enabled"] = bool(enabled)
+        self._save_state()
+        return {"ok": True, "sound_enabled": self.state["sound_enabled"]}
+
+    def save_settings(self, settings: Dict[str, Any]):
+        if not isinstance(settings, dict):
+            return {"ok": False, "error": "settings_must_be_object"}
+
+        current = self.state.get("settings")
+        if not isinstance(current, dict):
+            current = {}
+
+        current.update(settings)
+        self.state["settings"] = current
+
+        # Keep top-level keys synced when present in settings payload.
+        if "dota_path" in settings and isinstance(settings["dota_path"], str):
+            self.state["dota_path"] = settings["dota_path"]
+        if "sound_enabled" in settings:
+            self.state["sound_enabled"] = bool(settings["sound_enabled"])
+
+        self._save_state()
+        return {
+            "ok": True,
+            "settings": self.state["settings"],
+            "dota_path": self.state.get("dota_path", ""),
+            "sound_enabled": self.state.get("sound_enabled", True),
+        }
+
+    def get_settings(self):
+        game_folder = self.state.get("dota_path") or self._ensure_dota_path() or ""
+        sound_enabled = bool(self.state.get("sound_enabled", True))
+        return {
+            "gameFolder": game_folder,
+            "soundEnabled": sound_enabled,
+        }
 
     def _ensure_dota_path(self):
         path = self.state.get("dota_path")

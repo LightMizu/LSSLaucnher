@@ -2,7 +2,14 @@
     "favorites": [
         "60"
     ],
-    "installed_packs": [],
-    "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc3MzkxMjQ0OX0.FqyyvrKp5FF3JRiaPF0bxCCFJAIUTocFt-bzhQiBNkc",
-    "dota_path": "D:\\SteamLibrary\\steamapps\\common\\dota 2 beta"
+    "installed_packs": [
+        "861c16ed-ecf4-5f49-ac5b-7d1565adf2a8.vpk"
+    ],
+    "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc3NDI1NzY0MX0.rt7MYjDkt2ffai5d0TRAFyHjV9qmvlTEDoybC36lUMc",
+    "dota_path": "D:\\SteamLibrary\\steamapps\\common\\dota 2 beta",
+    "sound_enabled": true,
+    "settings": {
+        "gameFolder": "D:\\SteamLibrary\\steamapps\\common\\dota 2 beta",
+        "soundEnabled": false
+    }
 }
