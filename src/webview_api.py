@@ -1,4 +1,3 @@
-
 import json
 import threading
 import time
@@ -29,11 +28,11 @@ class PyWebAPI:
         self.api = API()
         self.auth = AuthUtil(self.api)
         self.state = self._load_state()
-        
+
         # Initialize API token if present
         if self.state.get("token"):
             self.api.token = self.state["token"]
-            
+
         self.current_mix_result_key = None
         self.mix_running = False
 
@@ -93,64 +92,34 @@ class PyWebAPI:
             "appName": "LSS Launcher",
             "logoLetter": "L",
             "team": [
-                {
-                    "name": "Alex",
-                    "role": "Developer",
-                    "color": "bg-purple-500",
-                },
-                {
-                    "name": "Kate",
-                    "role": "Designer",
-                },
+                {"name": "Light", "role": "Developer", "color": "bg-purple-500"},
+                {"name": "Lsq", "role": "Designer", "color": "bg-gray-50"},
+                {"name": "Darkness", "role": "Mod Creator", "color": "bg-black"},
             ],
             "changelog": [
-                 {
-                    "version": "1.2.0",
+                {
+                    "version": "2.0.0",
                     "date": "2026-02-01",
                     "changes": [
-                        "Added pack mixing",
-                        "Improved launcher performance",
-                        "UI polish",
-                    ],
-                },
-                {
-                    "version": "1.1.0",
-                    "date": "2026-01-15",
-                    "changes": [
-                        "Favorites support",
-                        "Telegram integration",
+                        "Полный редизайн интерфейса",
                     ],
                 },
             ],
             "socials": [
-                {
-                    "id": "github",
-                    "title": "GitHub",
-                    "icon": "github",
-                },
-                {
-                    "id": "telegram",
-                    "title": "Telegram",
-                    "icon": "telegram",
-                },
-                {
-                    "id": "website",
-                    "title": "Website",
-                    "icon": "website",
-                },
+                {"id": "telegram", "title": "Telegram", "icon": "telegram"},
             ],
         }
 
-    def open_telegram(self):
-        webbrowser.open("https://t.me/your_channel")
-
     def action(self, name: str, payload=None):
         logger.info(f"ACTION: {name} {payload}")
+        if payload["id"] == "telegram":
+            webbrowser.open("https://t.me/lssnews")
         return {"ok": True}
 
     def open_pack_dir(self):
         try:
             import os
+
             packs_path = Path(APP_DATA_PATH)
             if packs_path.exists():
                 os.startfile(str(packs_path))
@@ -165,9 +134,11 @@ class PyWebAPI:
 
     def get_shop_items(self):
         current_time = time.time()
-        
+
         # Check cache
-        if self.files_cache and (current_time - self.files_cache_time < self.CACHE_DURATION):
+        if self.files_cache and (
+            current_time - self.files_cache_time < self.CACHE_DURATION
+        ):
             files = self.files_cache
             logger.debug("Using cached files list")
         else:
@@ -177,14 +148,15 @@ class PyWebAPI:
             self.files_cache = files
             self.files_cache_time = current_time
             logger.debug("Fetched new files list from API")
-        
+
         # Transform to frontend expected format
         favorites = set(self.state.get("favorites", []))
         installed_ids = set(self.state.get("installed_packs", []))
-        
-        # Pre-calculate local file existence for all items to minimize IO in loop if possible, 
+
+        # Pre-calculate local file existence for all items to minimize IO in loop if possible,
         # but here we iterate anyway.
         from utils.api import APP_DATA_PATH
+
         packs_path = Path(APP_DATA_PATH)
 
         items = []
@@ -194,10 +166,10 @@ class PyWebAPI:
             # Backend provides: id, name, size, type (maybe?), etc.
             # Assuming 'type' or similar maps to category, or hardcoding 'visual'
             # Looking at home.py, it uses file["id"], file["name"], file["size"]
-            
+
             id_str = str(f.get("id"))
             is_installed = id_str in installed_ids
-            
+
             # Check if downloaded (exists in packs folder)
             # We need to know the filename. get_uuid_file might be slow if it does api calls?
             # helpers.get_uuid_file(id) just returns uuid from s3_key in the file object usually?
@@ -208,31 +180,33 @@ class PyWebAPI:
             # If it needs API, it's slow.
             # Let's look at get_uuid_file implementation.
             # It was: def get_uuid_file(id): ...
-            
+
             # For now, let's assume we can determine if it's downloaded.
             # Actually, `install_pack` uses `get_uuid_file(id)`.
             # Let's inspect `_original` data to see if we can derive filename without `get_uuid_file` overhead if it is high.
             # f['s3_key'] usually contains the UUID.
-            
+
             # Let's use get_uuid_file but we need to import it. It is imported.
             # But wait, looking at logs: "Getting uuid 4 60 => ..."
             # It seems fast enough.
-            
-            name_file = get_uuid_file(id_str) # Ensure string
+
+            name_file = get_uuid_file(id_str)  # Ensure string
             local_path = packs_path / name_file
             is_downloaded = local_path.exists()
 
-            items.append({
-                "id": id_str, # Frontend expects string ID? Example uses "visual_pack_1"
-                "name": f.get("name"),
-                "size": human_readable_size(f.get("size", 0)), # Use helper
-                "category": "visual", # Defaulting for now as backend data structure isn't fully clear on category
-                "isFavorite": id_str in favorites,
-                "isInstalled": is_installed,
-                "isDownloaded": is_downloaded,
-                # Store original data for download
-                "_original": f 
-            })
+            items.append(
+                {
+                    "id": id_str,  # Frontend expects string ID? Example uses "visual_pack_1"
+                    "name": f.get("name"),
+                    "size": human_readable_size(f.get("size", 0)),  # Use helper
+                    "category": "visual",  # Defaulting for now as backend data structure isn't fully clear on category
+                    "isFavorite": id_str in favorites,
+                    "isInstalled": is_installed,
+                    "isDownloaded": is_downloaded,
+                    # Store original data for download
+                    "_original": f,
+                }
+            )
         return items
 
     def get_installed_packs(self) -> List[str]:
@@ -256,12 +230,13 @@ class PyWebAPI:
     def login(self, username: str, password: str, remember: bool) -> int:
         # We need HWID
         from utils.hwid import get_hwid
+
         hwid = get_hwid()
-        
+
         status = self.api.get_token(username, password, hwid)
         if status == 200 and remember:
-             self.state["token"] = self.api.token
-             self._save_state()
+            self.state["token"] = self.api.token
+            self._save_state()
         return status
 
     def create_account(self):
@@ -279,20 +254,24 @@ class PyWebAPI:
         # But wait, get_shop_items returns IDs.
         # Let's assume I need to fetch files again or cache them to map ID -> s3_key.
         # For efficiency, I should probably cache the file list.
-        
+
         def worker():
             try:
                 # 1. Resolve IDs to keys
                 status, files = self.api.get_files(0, 100)
-                main_file = next((f for f in files if str(f["id"]) == str(mainId)), None)
+                main_file = next(
+                    (f for f in files if str(f["id"]) == str(mainId)), None
+                )
                 sub_file = next((f for f in files if str(f["id"]) == str(subId)), None)
-                
+
                 if not main_file or not sub_file:
                     logger.error("Could not find files for mix")
                     return
 
                 # 2. Start merge task
-                status, task_id = self.api.merge_pack(main_file["s3_key"], sub_file["s3_key"])
+                status, task_id = self.api.merge_pack(
+                    main_file["s3_key"], sub_file["s3_key"]
+                )
                 if status != 200:
                     logger.error(f"Merge failed to start: {status}")
                     return
@@ -300,14 +279,15 @@ class PyWebAPI:
                 # 3. Poll for completion
                 self.mix_running = True
                 result_key = None
-                for _ in range(60): # 60 seconds timeout (approx)
-                    if not self.mix_running: break
+                for _ in range(60):  # 60 seconds timeout (approx)
+                    if not self.mix_running:
+                        break
                     time.sleep(1)
                     s_code, task_data = self.api.get_task_status(task_id)
                     if task_data.get("progress") == "Status.DONE":
                         result_key = task_data.get("result_key")
                         break
-                
+
                 if result_key:
                     self.current_mix_result_key = result_key
                     webview.windows[0].evaluate_js(
@@ -327,9 +307,9 @@ class PyWebAPI:
         def worker():
             try:
                 uuid = Path(self.current_mix_result_key).stem
-                url = f"https://{self.current_mix_result_key}" # Assuming result_key is partial URL based on merge.py
+                url = f"https://{self.current_mix_result_key}"  # Assuming result_key is partial URL based on merge.py
                 # merge.py: f"https://{self.result_key}"
-                
+
                 # Verify dota path
                 dota_path = self._ensure_dota_path()
                 if not dota_path:
@@ -337,12 +317,12 @@ class PyWebAPI:
                     return
 
                 for progress in self.api.download_file(url, uuid, None):
-                     webview.windows[0].evaluate_js(
+                    webview.windows[0].evaluate_js(
                         f"window.__lsslauncher_on_mix_progress?.({progress})"
                     )
-                
+
                 install_pack_func(uuid, dota_path, self.api)
-                
+
                 webview.windows[0].evaluate_js("window.__lsslauncher_on_mix_done?.()")
             except Exception as e:
                 logger.error(f"Error in download_mix: {e}")
@@ -365,14 +345,13 @@ class PyWebAPI:
     def launch_game(self):
         launch_dota()
 
-
     def update_fix(self):
         dota_path = self._ensure_dota_path()
         if dota_path:
             patch_dota(dota_path)
             webview.windows[0].evaluate_js(
-                    f"window.__lsslauncher_on_update_fix_done?.()"
-                    )
+                f"window.__lsslauncher_on_update_fix_done?.()"
+            )
 
     def uninstall_pack(self):
         # Maybe delete pack?
@@ -380,8 +359,8 @@ class PyWebAPI:
         if dota_path:
             delete_pack(dota_path)
             webview.windows[0].evaluate_js(
-                        f"window.__lsslauncher_on_delete_pack_done?.()"
-                    )
+                f"window.__lsslauncher_on_delete_pack_done?.()"
+            )
             self.state["installed_packs"] = []
             self._save_state()
             self._invalidate_cache()
@@ -389,7 +368,7 @@ class PyWebAPI:
     def download_pack(self, id: str):
         # Note: 'id' from frontend is string, backend uses int in some places but string in get_uuid_file
         # home.py: name_file = get_uuid_file(id_pack) -> download_file(url, name_file, md5)
-        
+
         def worker():
             try:
                 # We need file info (url, md5)
@@ -415,7 +394,7 @@ class PyWebAPI:
             except Exception as e:
                 logger.error(f"Download pack failed: {e}")
                 webview.windows[0].evaluate_js(
-                     f"window.__lsslauncher_on_download_error?.('{id}')"
+                    f"window.__lsslauncher_on_download_error?.('{id}')"
                 )
 
         threading.Thread(target=worker, daemon=True).start()
@@ -424,27 +403,25 @@ class PyWebAPI:
         dota_path = self._ensure_dota_path()
         if not dota_path:
             return
-            
+
         try:
             name_file = get_uuid_file(id)
             install_pack_func(name_file, dota_path, self.api)
-            
+
             installed = set(self.state.get("installed_packs", []))
             installed.add(str(id))
             self.state["installed_packs"] = list(installed)
             self._save_state()
             self._invalidate_cache()
-            webview.windows[0].evaluate_js(
-                f"window.__lsslauncher_on_install_done?.()"
-            )
-            
+            webview.windows[0].evaluate_js(f"window.__lsslauncher_on_install_done?.()")
+
         except FileNotFoundError:
-                webview.windows[0].evaluate_js(
-                        f"window.__lsslauncher_set_modal?.(true, 'Установленная не верная директория Dota 2. Пожалуйста, проверьте путь в настройках.')"
-                    )
-                logger.error(f"Pack file not found for installation: {id}")
+            webview.windows[0].evaluate_js(
+                f"window.__lsslauncher_set_modal?.(true, 'Установленная не верная директория Dota 2. Пожалуйста, проверьте путь в настройках.')"
+            )
+            logger.error(f"Pack file not found for installation: {id}")
         except Exception as e:
-             logger.error(f"Install pack failed: {e}")
+            logger.error(f"Install pack failed: {e}")
 
     def toggle_favorite(self, id: str, isFavorite: bool):
         favorites = set(self.state.get("favorites", []))
@@ -452,14 +429,17 @@ class PyWebAPI:
             favorites.add(str(id))
         else:
             favorites.discard(str(id))
-        
+
         self.state["favorites"] = list(favorites)
         self._save_state()
         self._invalidate_cache()
 
     def open_pack_screenshots(self, id: str):
         # Check if we can get URL from file info
-         threading.Thread(target=lambda: webbrowser.open(f"https://lsslauncher.xyz/files/{id}"), daemon=True).start()
+        threading.Thread(
+            target=lambda: webbrowser.open(f"https://lsslauncher.xyz/files/{id}"),
+            daemon=True,
+        ).start()
 
     def add_custom_pack(self):
         def worker():
@@ -468,12 +448,18 @@ class PyWebAPI:
                 if not data_path.exists():
                     files = []
                 else:
-                    files = [p.name for p in data_path.iterdir() if p.is_file() and p.name.lower().endswith('.vpk')]
+                    files = [
+                        p.name
+                        for p in data_path.iterdir()
+                        if p.is_file() and p.name.lower().endswith(".vpk")
+                    ]
 
                 js_list = json.dumps(files)
                 window = self._get_window()
                 if window:
-                    window.evaluate_js(f"window.__lsslauncher_select_custom?.({js_list})")
+                    window.evaluate_js(
+                        f"window.__lsslauncher_select_custom?.({js_list})"
+                    )
             except Exception as e:
                 logger.error(f"add_custom_pack failed: {e}")
 
@@ -553,7 +539,9 @@ class PyWebAPI:
                 return {"ok": False, "error": "cancelled"}
 
             # pywebview may return tuple/list depending on backend.
-            selected_path = selected[0] if isinstance(selected, (list, tuple)) else selected
+            selected_path = (
+                selected[0] if isinstance(selected, (list, tuple)) else selected
+            )
             return selected_path
         except Exception as e:
             logger.error(f"select_game_folder failed: {e}")
@@ -600,8 +588,8 @@ class PyWebAPI:
     def _ensure_dota_path(self):
         path = self.state.get("dota_path")
         if not path:
-             path = get_dota2_install_path()
-             if path:
-                 self.state["dota_path"] = path
-                 self._save_state()
+            path = get_dota2_install_path()
+            if path:
+                self.state["dota_path"] = path
+                self._save_state()
         return path
