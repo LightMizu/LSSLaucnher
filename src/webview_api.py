@@ -1,4 +1,5 @@
 import json
+import sys
 import threading
 import time
 import webbrowser
@@ -7,6 +8,8 @@ from typing import Any, Dict, List, Optional
 
 import webview
 from loguru import logger
+
+from playsound3 import playsound
 
 from utils.api import API
 from utils.auth import AuthUtil
@@ -21,7 +24,14 @@ from utils.install_pack import (
 from utils.install_pack import APP_DATA_PATH
 
 PERSISTENCE_FILE = Path(get_folder()) / "persistence.json"
+current_dir = Path(__file__).parent
+if str(current_dir) not in sys.path:
+    sys.path.append(str(current_dir))
 
+if hasattr(sys, "_MEIPASS"):
+    sound_path = Path(sys._MEIPASS) / "assets" / "notification.mp3"
+else:
+    sound_path = current_dir.parent / "src" / "assets" / "notification.mp3"
 
 class PyWebAPI:
     def __init__(self):
@@ -239,9 +249,6 @@ class PyWebAPI:
             self._save_state()
         return status
 
-    def create_account(self):
-        webbrowser.open("https://lsslauncher.xyz/register")
-
     # =====================
     # MIX MENU
     # =====================
@@ -390,6 +397,7 @@ class PyWebAPI:
                 webview.windows[0].evaluate_js(
                     f"window.__lsslauncher_on_download_done?.('{id}')"
                 )
+                playsound(sound_path)
                 self._invalidate_cache()
             except Exception as e:
                 logger.error(f"Download pack failed: {e}")
@@ -414,6 +422,7 @@ class PyWebAPI:
             self._save_state()
             self._invalidate_cache()
             webview.windows[0].evaluate_js(f"window.__lsslauncher_on_install_done?.()")
+            
 
         except FileNotFoundError:
             webview.windows[0].evaluate_js(
