@@ -108,12 +108,21 @@ class PyWebAPI:
             ],
             "changelog": [
                 {
+                    "version": "2.0.1",
+                    "date": "25-02-2026",
+                    "changes": [
+                        "Исправленна кнопка скриншотов в главном меню",
+                        "Исправленна кнопка переключениязвука в настроках"
+                    ],
+                },
+                {
                     "version": "2.0.0",
-                    "date": "2026-02-01",
+                    "date": "25-02-2026",
                     "changes": [
                         "Полный редизайн интерфейса",
                     ],
                 },
+                
             ],
             "socials": [
                 {"id": "telegram", "title": "Telegram", "icon": "telegram"},
@@ -180,26 +189,6 @@ class PyWebAPI:
             id_str = str(f.get("id"))
             is_installed = id_str in installed_ids
 
-            # Check if downloaded (exists in packs folder)
-            # We need to know the filename. get_uuid_file might be slow if it does api calls?
-            # helpers.get_uuid_file(id) just returns uuid from s3_key in the file object usually?
-            # Wait, get_uuid_file in helpers.py might need the file object or just ID?
-            # Let's check helpers.py content again or recall.
-            # get_uuid_file(id) in helpers takes ID.
-            # If it constructs filename from ID, it's fast.
-            # If it needs API, it's slow.
-            # Let's look at get_uuid_file implementation.
-            # It was: def get_uuid_file(id): ...
-
-            # For now, let's assume we can determine if it's downloaded.
-            # Actually, `install_pack` uses `get_uuid_file(id)`.
-            # Let's inspect `_original` data to see if we can derive filename without `get_uuid_file` overhead if it is high.
-            # f['s3_key'] usually contains the UUID.
-
-            # Let's use get_uuid_file but we need to import it. It is imported.
-            # But wait, looking at logs: "Getting uuid 4 60 => ..."
-            # It seems fast enough.
-
             name_file = get_uuid_file(id_str)  # Ensure string
             local_path = packs_path / name_file
             is_downloaded = local_path.exists()
@@ -254,13 +243,6 @@ class PyWebAPI:
     # =====================
 
     def start_mix(self, mainId: str, subId: str):
-        # Logic from screens/merge.py
-        # Frontend passes IDs, but merge_pack expects s3_keys?
-        # Wait, frontend example passes 'visual_pack_1'.
-        # I need to resolve ID to s3_key if possible.
-        # But wait, get_shop_items returns IDs.
-        # Let's assume I need to fetch files again or cache them to map ID -> s3_key.
-        # For efficiency, I should probably cache the file list.
 
         def worker():
             try:
@@ -397,7 +379,8 @@ class PyWebAPI:
                 webview.windows[0].evaluate_js(
                     f"window.__lsslauncher_on_download_done?.('{id}')"
                 )
-                playsound(sound_path)
+                if self.get_settings()["soundEnabled"]:
+                    playsound(sound_path)
                 self._invalidate_cache()
             except Exception as e:
                 logger.error(f"Download pack failed: {e}")
@@ -445,8 +428,9 @@ class PyWebAPI:
 
     def open_pack_screenshots(self, id: str):
         # Check if we can get URL from file info
+        status, file_info = self.api.get_file(int(id))
         threading.Thread(
-            target=lambda: webbrowser.open(f"https://lsslauncher.xyz/files/{id}"),
+            target=lambda: webbrowser.open(file_info.get("screenshost", "https://t.me/screenshotsofpacks")),
             daemon=True,
         ).start()
 
