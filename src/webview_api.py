@@ -8,20 +8,21 @@ from typing import Any, Dict, List, Optional
 
 import webview
 from loguru import logger
-
 from playsound3 import playsound
 
 from utils.api import API
 from utils.auth import AuthUtil
 from utils.helpers import get_folder, get_uuid_file, human_readable_size
 from utils.install_pack import (
+    APP_DATA_PATH,
+    delete_pack,
     get_dota2_install_path,
-    install_pack as install_pack_func,
     launch_dota,
     patch_dota,
-    delete_pack,
 )
-from utils.install_pack import APP_DATA_PATH
+from utils.install_pack import (
+    install_pack as install_pack_func,
+)
 
 PERSISTENCE_FILE = Path(get_folder()) / "persistence.json"
 current_dir = Path(__file__).parent
@@ -29,16 +30,18 @@ if str(current_dir) not in sys.path:
     sys.path.append(str(current_dir))
 
 if hasattr(sys, "_MEIPASS"):
-    sound_path = Path(sys._MEIPASS) / "assets" / "notification.mp3"
+    sound_path = Path(sys._MEIPASS) / "assets" / "notification.mp3"  # ignore
 else:
     sound_path = current_dir.parent / "src" / "assets" / "notification.mp3"
+
 
 class PyWebAPI:
     def __init__(self):
         self.api = API()
         self.auth = AuthUtil(self.api)
         self.state = self._load_state()
-
+        self._download_cancel: dict[str, threading.Event] = {}
+        self._download_lock = threading.Lock()
         # Initialize API token if present
         if self.state.get("token"):
             self.api.token = self.state["token"]
@@ -112,7 +115,7 @@ class PyWebAPI:
                     "date": "25-02-2026",
                     "changes": [
                         "Исправленна кнопка скриншотов в главном меню",
-                        "Исправленна кнопка переключениязвука в настроках"
+                        "Исправленна кнопка переключениязвука в настроках",
                     ],
                 },
                 {
@@ -122,14 +125,13 @@ class PyWebAPI:
                         "Полный редизайн интерфейса",
                     ],
                 },
-                
             ],
             "socials": [
                 {"id": "telegram", "title": "Telegram", "icon": "telegram"},
             ],
         }
 
-    def action(self, name: str, payload=None):
+    def action(self, name: str, payload: dict):
         logger.info(f"ACTION: {name} {payload}")
         if payload["id"] == "telegram":
             webbrowser.open("https://t.me/lssnews")
@@ -268,7 +270,7 @@ class PyWebAPI:
                 # 3. Poll for completion
                 self.mix_running = True
                 result_key = None
-                for _ in range(60):  # 60 seconds timeout (approx)
+                for _ in range(60 * 5):  # 60 seconds timeout (approx)
                     if not self.mix_running:
                         break
                     time.sleep(1)
@@ -284,6 +286,9 @@ class PyWebAPI:
                     )
                 else:
                     logger.error("Merge timed out or failed")
+                    webview.windows[0].evaluate_js(
+                        f'window.__lsslauncher_on_mix_error?.("Черезмерное ожидание")'
+                    )
             except Exception as e:
                 logger.error(f"Error in start_mix: {e}")
 
@@ -354,39 +359,68 @@ class PyWebAPI:
             self._save_state()
             self._invalidate_cache()
 
+    def cancel_download_pack(self, id: str):
+        id = str(id)
+        with self._download_lock:
+            ev = self._download_cancel.get(id)
+            if ev:
+                ev.set()
+        return True
+
     def download_pack(self, id: str):
-        # Note: 'id' from frontend is string, backend uses int in some places but string in get_uuid_file
-        # home.py: name_file = get_uuid_file(id_pack) -> download_file(url, name_file, md5)
+        id = str(id)
+
+        with self._download_lock:
+            # если этот же id уже качается — не стартуем второй раз
+            old = self._download_cancel.get(id)
+            if old and not old.is_set():
+                return
+
+            ev = threading.Event()
+            self._download_cancel[id] = ev
 
         def worker():
             try:
-                # We need file info (url, md5)
-                # Ideally we should cache files list or fetch single file
                 status, file_info = self.api.get_file(int(id))
                 if status != 200:
-                    logger.error(f"Could not get file info for {id}")
+                    webview.windows[0].evaluate_js(
+                        f"window.__lsslauncher_on_download_error?.('{id}', 'file info error')"
+                    )
                     return
 
                 name_file = get_uuid_file(id)
                 download_url = file_info.get("download_url")
                 md5 = file_info.get("md5")
 
-                for p in self.api.download_file(download_url, name_file, md5):
+                for p in self.api.download_file(
+                    download_url, name_file, md5, stop_event=ev
+                ):
+                    if ev.is_set():
+                        return
                     webview.windows[0].evaluate_js(
                         f"window.__lsslauncher_on_download_progress?.('{id}', {p})"
                     )
 
+                if ev.is_set():
+                    return
+
                 webview.windows[0].evaluate_js(
                     f"window.__lsslauncher_on_download_done?.('{id}')"
                 )
-                if self.get_settings()["soundEnabled"]:
+                if self.get_settings().get("soundEnabled"):
                     playsound(sound_path)
                 self._invalidate_cache()
+
             except Exception as e:
                 logger.error(f"Download pack failed: {e}")
                 webview.windows[0].evaluate_js(
-                    f"window.__lsslauncher_on_download_error?.('{id}')"
+                    f"window.__lsslauncher_on_download_error?.('{id}', 'error')"
                 )
+            finally:
+                with self._download_lock:
+                    cur = self._download_cancel.get(id)
+                    if cur is ev:
+                        self._download_cancel.pop(id, None)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -405,7 +439,6 @@ class PyWebAPI:
             self._save_state()
             self._invalidate_cache()
             webview.windows[0].evaluate_js(f"window.__lsslauncher_on_install_done?.()")
-            
 
         except FileNotFoundError:
             webview.windows[0].evaluate_js(
@@ -430,7 +463,9 @@ class PyWebAPI:
         # Check if we can get URL from file info
         status, file_info = self.api.get_file(int(id))
         threading.Thread(
-            target=lambda: webbrowser.open(file_info.get("screenshost", "https://t.me/screenshotsofpacks")),
+            target=lambda: webbrowser.open(
+                file_info.get("screenshost", "https://t.me/screenshotsofpacks")
+            ),
             daemon=True,
         ).start()
 

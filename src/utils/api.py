@@ -2,6 +2,7 @@ import gzip
 import hashlib
 import os
 import shutil
+import threading
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple
 
@@ -113,11 +114,14 @@ class API:
             logger.error(f"Failed to fetch file info: {e}")
             return 0, {}
 
-    def download_file(self, url, name, hash_file) -> Iterator[float]:
+    def download_file(
+        self, url, name, hash_file, stop_event: threading.Event | None = None
+    ) -> Iterator[float]:
         logger.info(f"Starting download for file '{name}'")
-        if not os.path.exists(APP_DATA_PATH):
-            os.makedirs(APP_DATA_PATH)
+
+        os.makedirs(APP_DATA_PATH, exist_ok=True)
         local_filename = Path(APP_DATA_PATH) / name
+        gz_path = Path(f"{local_filename}.gz")
 
         # Check local file
         if os.path.isfile(local_filename):
@@ -137,16 +141,66 @@ class API:
                 logger.info("Local file exists, skipping download")
                 return
 
-        for i in download(url, f"{local_filename}.gz"):
+        # Если уже есть старый .gz от прошлой попытки — лучше убрать
+        if gz_path.exists():
+            try:
+                gz_path.unlink()
+            except Exception as e:
+                logger.warning(f"Could not remove stale gz '{gz_path}': {e}")
+
+        # ✅ ВАЖНО: передаём stop_event внутрь download()
+        for i in download(url, str(gz_path), stop_event=stop_event):
+            if stop_event and stop_event.is_set():
+                # cleanup partial gz
+                try:
+                    if gz_path.exists():
+                        gz_path.unlink()
+                except Exception as e:
+                    logger.warning(f"Could not remove partial gz '{gz_path}': {e}")
+                return
             yield i
 
-        logger.info(f"Extracting downloaded gzip file '{local_filename}.gz'")
-        with gzip.open(f"{local_filename}.gz", "rb") as f_in:
-            with open(local_filename, "wb") as f_out:
-                shutil.copyfileobj(f_in, f_out)
-        os.remove(f"{local_filename}.gz")
-        logger.success(f"File '{name}' downloaded and extracted successfully")
-        return
+        # на всякий случай — если отменили между окончанием и распаковкой
+        if stop_event and stop_event.is_set():
+            try:
+                if gz_path.exists():
+                    gz_path.unlink()
+            except Exception as e:
+                logger.warning(f"Could not remove partial gz '{gz_path}': {e}")
+            return
+
+        logger.info(f"Extracting downloaded gzip file '{gz_path}'")
+
+        try:
+            with gzip.open(gz_path, "rb") as f_in:
+                with open(local_filename, "wb") as f_out:
+                    # Можно добавить проверку отмены во время распаковки (редко нужно, но приятно)
+                    while True:
+                        if stop_event and stop_event.is_set():
+                            raise RuntimeError("cancelled")
+                        chunk = f_in.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        f_out.write(chunk)
+
+            gz_path.unlink(missing_ok=True)
+            logger.success(f"File '{name}' downloaded and extracted successfully")
+
+        except Exception as e:
+            # если отменили или распаковка упала — чистим хвосты
+            logger.warning(f"Extract failed for '{gz_path}': {e}")
+            try:
+                if local_filename.exists():
+                    local_filename.unlink()
+            except Exception:
+                pass
+            try:
+                if gz_path.exists():
+                    gz_path.unlink()
+            except Exception:
+                pass
+            # пробрасывать ошибку или просто return — как тебе нужно
+            return
 
     def merge_pack(self, s3_key_main: str, s3_key_second: str):
         logger.info(f"Add task merge {s3_key_main} {s3_key_second}")

@@ -16,6 +16,9 @@ dependencies = [
     "wmi (>=1.5.1,<2.0.0); sys.platform=='win32'",
     "pywebview (>=6.1)",
     "playsound3>=3.3.1",
+    "qtpy>=2.4.3",
+    "pyqt6>=6.10.2",
+    "pyqt6-webengine>=6.10.0",
 ]
 
 [tool.poetry]
