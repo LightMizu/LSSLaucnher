@@ -270,7 +270,7 @@ class PyWebAPI:
                 # 3. Poll for completion
                 self.mix_running = True
                 result_key = None
-                for _ in range(60 * 5):  # 60 seconds timeout (approx)
+                for _ in range(60 * 20):  # 60 seconds timeout (approx)
                     if not self.mix_running:
                         break
                     time.sleep(1)
