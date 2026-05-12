@@ -2,11 +2,11 @@
 
 
 a = Analysis(
-    ['src\\main.py'],
-    pathex=['src'],
+    ["src/main.py"],
+    pathex=["src"],
     binaries=[],
-    datas=[('src\\assets', 'assets'), ('ui', 'ui')],
-    hiddenimports=['webview_api'],
+    datas=[("src/assets", "assets"), ("ui", "ui")],
+    hiddenimports=["webview_api"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='lsslauncher',
+    name="lsslauncher",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -36,5 +36,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     uac_admin=True,
-    icon=['build_assets\\setup.ico'],
+    icon=["build_assets/setup.ico"],
 )
