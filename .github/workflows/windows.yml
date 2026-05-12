@@ -1,35 +1,42 @@
 name: Windows Build
+
 on:
   workflow_dispatch:
+
 env:
   PYTHON_VERSION: 3.13.7
   FLET_CLI_VERSION: 0.28.3
   PYTHONUTF8: 1
   FLET_CLI_NO_RICH_OUTPUT: 1
   UV_NO_PROGRESS: 1
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Dependencies
-        run: uv sync
+      - name: Install dependencies
+        run: uv sync --frozen
 
-      - name: Updater Build Windows
+      - name: Build launcher
         run: uv run pyinstaller lsslauncher.spec
 
-      - name: Updater Build Windows
-        run: pyinstaller .\update.py --onefile --noconsole -i "build_assets\setup.ico" --name update --add-data "build_assets;build_assets" -d imports --uac-admin
+      - name: Build updater
+        run: >
+          uv run pyinstaller update.py
+          --onefile
+          --noconsole
+          --icon build_assets/setup.ico
+          --name update
+          --add-data "build_assets;build_assets"
+          --collect-all flet
+          --uac-admin
 
       - name: Install Inno Setup
         run: choco install innosetup --yes
@@ -37,15 +44,15 @@ jobs:
       - name: Build installer
         run: iscc lssinstaller.iss
 
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4.3.4
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
         with:
           name: windows-build-artifact
           path: dist
           if-no-files-found: error
-          overwrite: false
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4.3.4
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
         with:
           name: installer
           path: Output/mysetup.exe
