@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -5,15 +6,19 @@ from pathlib import Path
 import webview
 from loguru import logger
 
+from utils.helpers import get_folder
 from webview_api import PyWebAPI
 
 current_dir = Path(__file__).parent
 if str(current_dir) not in sys.path:
     sys.path.append(str(current_dir))
 
+APP_LOG_PATH = Path(get_folder()) / "logs"
+
 
 def main():
-    logger.add("dota_launcher.log", rotation="11290 MB")
+    os.makedirs(APP_LOG_PATH, exist_ok=True)
+    logger.add(APP_LOG_PATH / "launcher.log", rotation="12:00")
     logger.info("Starting LSS Launcher with React UI")
 
     api = PyWebAPI()
@@ -47,7 +52,7 @@ def main():
     )
 
     # Enable dev tools for debugging
-    webview.start(debug=False, http_server=True)
+    webview.start(debug=True, http_server=True)
 
 
 if __name__ == "__main__":

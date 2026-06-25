@@ -103,11 +103,23 @@ class PyWebAPI:
         # Using the hardcoded data from the example as requested to strictly follow the structure
         return {
             "appName": "LSS Launcher",
-            "logoLetter": "L",
+            "logoUrl": "https://i.imgur.com/yeCIPkD.png",
             "team": [
-                {"name": "Light", "role": "Developer", "color": "bg-purple-500"},
-                {"name": "Lsq", "role": "Designer", "color": "bg-gray-50"},
-                {"name": "Darkness", "role": "Mod Creator", "color": "bg-black"},
+                {
+                    "name": "BoneByte",
+                    "role": "Developer",
+                    "avatarUrl": "https://i.imgur.com/HQP9lIr.png",
+                },
+                {
+                    "name": "Lsq",
+                    "role": "Designer",
+                    "avatarUrl": "https://i.imgur.com/CaeeUha.png",
+                },
+                {
+                    "name": "Darkness",
+                    "role": "Mod Creator",
+                    "avatarUrl": "https://i.imgur.com/Pk0fgRX.png",
+                },
             ],
             "changelog": [
                 {
