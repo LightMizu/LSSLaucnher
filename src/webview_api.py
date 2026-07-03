@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 import webbrowser
+from logging import log
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -557,15 +558,18 @@ class PyWebAPI:
     def set_game_folder(self, folder_path: Any):
         normalized_path = self._extract_folder_path(folder_path)
         if not normalized_path:
+            logger.error("empty_path")
             return {"ok": False, "error": "empty_path"}
 
         path = Path(normalized_path).expanduser()
         if not path.exists() or not path.is_dir():
+            logger.error("invalid_path")
             return {"ok": False, "error": "invalid_path"}
 
         resolved = str(path.resolve())
         self.state["dota_path"] = resolved
         self._save_state()
+        logger.success("resolved_path", resolved)
         return {"ok": True, "dota_path": resolved}
 
     def select_game_folder(self):
@@ -574,7 +578,7 @@ class PyWebAPI:
             if window is None:
                 return {"ok": False, "error": "window_not_ready"}
 
-            selected = window.create_file_dialog(webview.FOLDER_DIALOG)
+            selected = window.create_file_dialog(webview.FileDialog.FOLDER)
             if not selected:
                 return {"ok": False, "error": "cancelled"}
 
@@ -582,7 +586,8 @@ class PyWebAPI:
             selected_path = (
                 selected[0] if isinstance(selected, (list, tuple)) else selected
             )
-            return selected_path
+            print(selected_path)
+            return {"ok": True, "path": selected_path}
         except Exception as e:
             logger.error(f"select_game_folder failed: {e}")
             return {"ok": False, "error": "dialog_error"}

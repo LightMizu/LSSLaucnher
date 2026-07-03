@@ -2,7 +2,7 @@
     "favorites": [],
     "installed_packs": [],
     "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc4NDk3OTYxM30.SshZoAPY1XSGOlImjLRYMF6D2HFG6ZHBpRExoJBPgK0",
-    "dota_path": "D:\\SteamLibrary\\steamapps\\common\\dota 2 beta",
     "sound_enabled": true,
-    "settings": {}
+    "settings": {},
+    "dota_path": "/home/light/.local/share/Steam/steamapps/common/dota 2 beta"
 }
