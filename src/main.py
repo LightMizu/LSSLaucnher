@@ -42,7 +42,8 @@ def main():
 
     _ = webview.create_window(
         "LSS Launcher",
-        str(ui_path),
+        # str(ui_path),
+        url="http://localhost:3000",
         js_api=api,
         frameless=True,
         easy_drag=False,

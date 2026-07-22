@@ -1,7 +1,9 @@
 {
-    "favorites": [],
+    "favorites": [
+        "191"
+    ],
     "installed_packs": [],
-    "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc4NDk3OTYxM30.SshZoAPY1XSGOlImjLRYMF6D2HFG6ZHBpRExoJBPgK0",
+    "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc4NzMyODYxN30.42FDT_TJ38TlRcfu1K5Ou6ZCENO6kflSLtkcZe1g7H4",
     "sound_enabled": true,
     "settings": {},
     "dota_path": "/home/light/.local/share/Steam/steamapps/common/dota 2 beta"

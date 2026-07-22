@@ -162,6 +162,24 @@ class PyWebAPI:
         except Exception as e:
             logger.error(f"Failed to open pack directory: {e}")
 
+    def open_log_folder(self):
+        try:
+            import os
+
+            APP_LOG_PATH = Path(get_folder()) / "logs"
+            log_path = Path(APP_LOG_PATH)
+            if log_path.exists():
+                os.startfile(str(log_path))
+            else:
+                logger.error(f"Log directory not found: {packs_path}")
+        except Exception as e:
+            logger.error(f"Failed to open log directory: {e}")
+
+    def delete_cache(self):
+        import shutil
+
+        shutil.rmtree(Path(APP_DATA_PATH))
+
     # =====================
     # SHOP
     # =====================

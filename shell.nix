@@ -20,6 +20,7 @@ in
 pkgs.mkShell {
   buildInputs = [
     pkgs.python313
+    pkgs.uv
     pkgs.python313Packages.pygobject3
     pkgs.gobject-introspection
 
@@ -54,7 +55,8 @@ pkgs.mkShell {
     # GIO TLS modules
     export GIO_EXTRA_MODULES="${pkgs.glib-networking}/lib/gio/modules"
     export GIO_USE_TLS=gnutls
-
+    export GDK_BACKEND=x11
+    export WEBKIT_DISABLE_DMABUF_RENDERER=1
     # Certificates
     export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
     export G_TLS_CA_FILE="$SSL_CERT_FILE"
