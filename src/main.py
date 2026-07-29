@@ -42,8 +42,8 @@ def main():
 
     _ = webview.create_window(
         "LSS Launcher",
-        # str(ui_path),
-        url="http://localhost:3000",
+        str(ui_path),
+        #url="http://localhost:3000",
         js_api=api,
         frameless=True,
         easy_drag=False,
@@ -53,7 +53,7 @@ def main():
     )
 
     # Enable dev tools for debugging
-    webview.start(debug=True, http_server=True)
+    webview.start(debug=False, http_server=True)
 
 
 if __name__ == "__main__":
