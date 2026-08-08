@@ -149,6 +149,39 @@ class InstallPackTests(unittest.TestCase):
             self.assertTrue(old_vpk.exists())
             self.assertEqual(old_vpk.read_bytes(), b"old")
 
+    def test_install_corrupted_zip_keeps_existing_files(self):
+        with TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            packs_dir = base / "packs"
+            packs_dir.mkdir()
+            zip_path = packs_dir / "corrupted-pack.zip"
+            with zipfile.ZipFile(
+                zip_path, "w", compression=zipfile.ZIP_STORED
+            ) as archive:
+                archive.writestr("nested/main.vpk", b"valid-data" * 128)
+
+            data = bytearray(zip_path.read_bytes())
+            for i in range(50, len(data) - 50):
+                if data[i] not in (0, 255):
+                    data[i] ^= 1
+                    break
+            zip_path.write_bytes(data)
+
+            dota_path = base / "dota"
+            mod_dir = dota_path / "game" / DOTA_MOD_FOLDER
+            mod_dir.mkdir(parents=True)
+            old_vpk = mod_dir / "old_file.vpk"
+            old_vpk.write_bytes(b"old")
+
+            with patch("utils.install_pack.APP_DATA_PATH", str(packs_dir)), patch(
+                "utils.install_pack.patch_d"
+            ):
+                with self.assertRaises(CustomPackInstallError):
+                    install_pack("corrupted-pack.zip", dota_path, api=None)
+
+            self.assertTrue(old_vpk.exists())
+            self.assertEqual(old_vpk.read_bytes(), b"old")
+
 
 if __name__ == "__main__":
     unittest.main()

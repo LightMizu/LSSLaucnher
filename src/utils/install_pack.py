@@ -7,6 +7,7 @@ import zipfile
 from utils.dota_patcher import restore_dota, patch_dota as patch_d, DOTA_MOD_FOLDER
 from utils.helpers import get_folder
 from pathlib import Path
+from shutil import copyfileobj
 import subprocess
 from typing import Union
 from loguru import logger
@@ -137,36 +138,78 @@ def _install_zip_pack(zip_path: Path, vpk_folder: Path) -> list[Path]:
     logger.info(f"Extracting custom pack archive '{zip_path.name}'")
     with tempfile.TemporaryDirectory(prefix="lsslauncher-pack-") as temp_dir:
         extract_dir = Path(temp_dir)
-        with zipfile.ZipFile(zip_path, "r") as archive:
-            archive.extractall(extract_dir)
-
-        vpk_files = sorted(
-            path
-            for path in extract_dir.rglob("*")
-            if path.is_file() and path.suffix.lower() == ".vpk"
-        )
-        if not vpk_files:
-            raise CustomPackInstallError(
-                f"No .vpk files found in archive '{zip_path.name}'"
-            )
-
-        installed_files: list[Path] = []
-        installed_names: set[str] = set()
-        for source_vpk in vpk_files:
-            if source_vpk.name in installed_names:
-                raise CustomPackInstallError(
-                    f"Archive '{zip_path.name}' contains duplicate VPK names: '{source_vpk.name}'"
+        try:
+            with zipfile.ZipFile(zip_path, "r") as archive:
+                vpk_infos = sorted(
+                    (
+                        info
+                        for info in archive.infolist()
+                        if not info.is_dir()
+                        and Path(info.filename).suffix.lower() == ".vpk"
+                    ),
+                    key=lambda info: info.filename.lower(),
                 )
-            installed_names.add(source_vpk.name)
+                if not vpk_infos:
+                    raise CustomPackInstallError(
+                        f"No .vpk files found in archive '{zip_path.name}'"
+                    )
+
+                extracted_files = _extract_vpks_from_archive(
+                    archive=archive,
+                    zip_name=zip_path.name,
+                    vpk_infos=vpk_infos,
+                    extract_dir=extract_dir,
+                )
+        except zipfile.BadZipFile as e:
+            raise CustomPackInstallError(
+                f"Archive '{zip_path.name}' is corrupted or invalid"
+            ) from e
+        except zipfile.LargeZipFile as e:
+            raise CustomPackInstallError(
+                f"Archive '{zip_path.name}' requires unsupported ZIP64 support"
+            ) from e
 
         _clear_installed_vpks(vpk_folder)
-        for source_vpk in vpk_files:
-            dest_vpk = vpk_folder / source_vpk.name
-            logger.info(f"Installing VPK '{source_vpk.name}' from archive")
-            shutil.move(str(source_vpk), dest_vpk)
+        installed_files: list[Path] = []
+        for extracted_file in extracted_files:
+            dest_vpk = vpk_folder / extracted_file.name
+            logger.info(f"Installing VPK '{extracted_file.name}' from archive")
+            shutil.move(str(extracted_file), dest_vpk)
             installed_files.append(dest_vpk)
 
         return installed_files
+
+
+def _extract_vpks_from_archive(
+    archive: zipfile.ZipFile,
+    zip_name: str,
+    vpk_infos: list[zipfile.ZipInfo],
+    extract_dir: Path,
+) -> list[Path]:
+    extracted_files: list[Path] = []
+    extracted_names: set[str] = set()
+
+    for info in vpk_infos:
+        dest_name = Path(info.filename).name
+        if dest_name in extracted_names:
+            raise CustomPackInstallError(
+                f"Archive '{zip_name}' contains duplicate VPK names: '{dest_name}'"
+            )
+
+        temp_path = extract_dir / dest_name
+        logger.info(f"Validating VPK '{info.filename}' from archive")
+        try:
+            with archive.open(info, "r") as source, open(temp_path, "wb") as target:
+                copyfileobj(source, target)
+        except (OSError, RuntimeError, zipfile.BadZipFile, ValueError) as e:
+            raise CustomPackInstallError(
+                f"Archive '{zip_name}' contains a corrupted VPK file: '{dest_name}'"
+            ) from e
+
+        extracted_files.append(temp_path)
+        extracted_names.add(dest_name)
+
+    return extracted_files
 
 
 def launch_dota(extra_args=None):
