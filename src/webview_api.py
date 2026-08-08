@@ -16,6 +16,7 @@ from utils.auth import AuthUtil
 from utils.helpers import get_folder, get_uuid_file, human_readable_size
 from utils.install_pack import (
     APP_DATA_PATH,
+    CustomPackInstallError,
     delete_pack,
     get_dota2_install_path,
     launch_dota,
@@ -476,6 +477,13 @@ class PyWebAPI:
                 f"window.__lsslauncher_set_modal?.(true, 'Установленная не верная директория Dota 2. Пожалуйста, проверьте путь в настройках.')"
             )
             logger.error(f"Pack file not found for installation: {id}")
+        except CustomPackInstallError as e:
+            window = self._get_window()
+            if window:
+                window.evaluate_js(
+                    f"window.__lsslauncher_set_modal?.(true, {json.dumps(str(e))})"
+                )
+            logger.error(f"Install pack failed: {e}")
         except Exception as e:
             logger.error(f"Install pack failed: {e}")
 
@@ -510,7 +518,7 @@ class PyWebAPI:
                     files = [
                         p.name
                         for p in data_path.iterdir()
-                        if p.is_file() and p.name.lower().endswith(".vpk")
+                        if p.is_file() and p.name.lower().endswith(".zip")
                     ]
 
                 js_list = json.dumps(files)
@@ -553,6 +561,14 @@ class PyWebAPI:
                 )
             logger.error(f"Selected custom pack file not found: {pack}")
             return {"ok": False, "error": "file_not_found"}
+        except CustomPackInstallError as e:
+            window = self._get_window()
+            if window:
+                window.evaluate_js(
+                    f"window.__lsslauncher_set_modal?.(true, {json.dumps(str(e))})"
+                )
+            logger.error(f"selected_custom failed: {e}")
+            return {"ok": False, "error": "invalid_custom_pack", "message": str(e)}
         except Exception as e:
             logger.error(f"selected_custom failed: {e}")
             return {"ok": False, "error": "exception", "message": str(e)}

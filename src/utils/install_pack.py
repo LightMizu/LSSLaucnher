@@ -2,6 +2,8 @@ import os
 import platform
 from utils.api import API
 import shutil
+import tempfile
+import zipfile
 from utils.dota_patcher import restore_dota, patch_dota as patch_d, DOTA_MOD_FOLDER
 from utils.helpers import get_folder
 from pathlib import Path
@@ -11,6 +13,10 @@ from loguru import logger
 
 APP_DATA_PATH: str = str(Path(get_folder()) / "packs")
 GAMEINFO_SPECIFICBRANCH = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-Dota2/refs/heads/master/game/dota/gameinfo_branchspecific.gi"
+
+
+class CustomPackInstallError(Exception):
+    pass
 
 
 def get_dota2_install_path():
@@ -92,14 +98,75 @@ def get_dota2_install_path():
 def install_pack(uuid: str, dota_path: Union[str, Path], api: API):
     dota_path = Path(dota_path)
     data_path = Path(APP_DATA_PATH)
-    vpk_file = data_path / uuid
     vpk_folder = dota_path / "game" / DOTA_MOD_FOLDER
     vpk_folder.mkdir(parents=True, exist_ok=True)
     logger.info(f"Installing pack '{uuid}' to {vpk_folder}")
     patch_d(dota_path=str(dota_path))
+
+    source_path = data_path / uuid
+    if source_path.suffix.lower() == ".zip":
+        installed_files = _install_zip_pack(source_path, vpk_folder)
+    else:
+        installed_files = _install_single_vpk(source_path, vpk_folder)
+
+    logger.success(
+        f"Pack '{uuid}' installed successfully ({len(installed_files)} vpk files)"
+    )
+
+
+def _clear_installed_vpks(vpk_folder: Path):
+    for existing_vpk in vpk_folder.glob("*.vpk"):
+        logger.info(f"Removing previously installed pack file '{existing_vpk.name}'")
+        existing_vpk.unlink()
+
+
+def _install_single_vpk(vpk_file: Path, vpk_folder: Path) -> list[Path]:
+    if not vpk_file.is_file():
+        raise FileNotFoundError(vpk_file)
+
+    _clear_installed_vpks(vpk_folder)
     dest_vpk = vpk_folder / "pak01_dir.vpk"
     shutil.copyfile(vpk_file, dest_vpk)
-    logger.success(f"Pack '{uuid}' installed successfully")
+    return [dest_vpk]
+
+
+def _install_zip_pack(zip_path: Path, vpk_folder: Path) -> list[Path]:
+    if not zip_path.is_file():
+        raise FileNotFoundError(zip_path)
+
+    logger.info(f"Extracting custom pack archive '{zip_path.name}'")
+    with tempfile.TemporaryDirectory(prefix="lsslauncher-pack-") as temp_dir:
+        extract_dir = Path(temp_dir)
+        with zipfile.ZipFile(zip_path, "r") as archive:
+            archive.extractall(extract_dir)
+
+        vpk_files = sorted(
+            path
+            for path in extract_dir.rglob("*")
+            if path.is_file() and path.suffix.lower() == ".vpk"
+        )
+        if not vpk_files:
+            raise CustomPackInstallError(
+                f"No .vpk files found in archive '{zip_path.name}'"
+            )
+
+        installed_files: list[Path] = []
+        installed_names: set[str] = set()
+        for source_vpk in vpk_files:
+            if source_vpk.name in installed_names:
+                raise CustomPackInstallError(
+                    f"Archive '{zip_path.name}' contains duplicate VPK names: '{source_vpk.name}'"
+                )
+            installed_names.add(source_vpk.name)
+
+        _clear_installed_vpks(vpk_folder)
+        for source_vpk in vpk_files:
+            dest_vpk = vpk_folder / source_vpk.name
+            logger.info(f"Installing VPK '{source_vpk.name}' from archive")
+            shutil.move(str(source_vpk), dest_vpk)
+            installed_files.append(dest_vpk)
+
+        return installed_files
 
 
 def launch_dota(extra_args=None):
