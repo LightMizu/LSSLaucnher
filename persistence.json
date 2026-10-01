@@ -3,7 +3,8 @@
         "191"
     ],
     "installed_packs": [
-        "dota 2 beta(4).zip"
+        "dota 2 beta(4).zip",
+        "350"
     ],
     "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsaWdodCIsImV4cCI6MTc4NzMyODYxN30.42FDT_TJ38TlRcfu1K5Ou6ZCENO6kflSLtkcZe1g7H4",
     "sound_enabled": true,
