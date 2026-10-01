@@ -14,15 +14,15 @@ dependencies = [
     "pyinstaller (>=6.16.0,<7.0.0)",
     "loguru (>=0.7.3,<0.8.0)",
     "wmi (>=1.5.1,<2.0.0); sys.platform=='win32'",
-    "pywebview (>=6.1)",
+    "pywebview>=6.1",
     "playsound3>=3.3.1",
     "qtpy>=2.4.3",
     "pyqt6>=6.10.2",
     "pyqt6-webengine>=6.10.0",
+    "pygobject>=3.58.0",
+    "pycairo>=1.29.1",
 ]
 
-[tool.poetry]
-packages = [
-    { include = "utils", from = "src" },
-]
+[tool.uv.extra-build-dependencies]
+proxy-tools = ["setuptools"]
 
